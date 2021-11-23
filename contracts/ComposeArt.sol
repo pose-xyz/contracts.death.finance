@@ -26,6 +26,7 @@ contract ComposeArt is ERC721, Ownable {
         ReleaseTiming releaseTiming;
     }
 
+    // Have special saleEnd value for sales which have no intended ending.
     struct ReleaseTiming {
         uint256 saleStart;
         uint256 saleEnd;
@@ -40,8 +41,8 @@ contract ComposeArt is ERC721, Ownable {
         address signerAddress;
         address verifySignatureAddress;
         uint64 baseRegistrationFee;
-        uint32 baseCount;
-        uint32 releaseCount;
+        uint8 mintCut;
+        uint8 royaltyCut;
     }
     Config config;
 
@@ -55,8 +56,15 @@ contract ComposeArt is ERC721, Ownable {
         config = Config(_signerAddress, _verifySignatureAddress, 10000000000000000, 0, 0);
     }
 
+    function setCuts(uint8 _mintCut, uint8 _royaltyCut) public onlyOwner {
+        config.mintCut = _mintCut;
+        config.royaltyCut = _royaltyCut;
+    }
+
     function createBase() payable public returns (uint32) {
         require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
+        baseOwner[baseCount] = _msgSender();
+        ownerBalance[owner()] = ownerBalance[owner()] + uint72(msg.value);
         baseCount = baseCount + 1;
         return baseCount;
     }
@@ -67,7 +75,6 @@ contract ComposeArt is ERC721, Ownable {
 
     function createRelease(uint32 _base, bytes32 _provenanceHash, uint16 _maxPacks, uint8 _maxPackPurchase, uint64 _packPrice, uint8 _propsPerPack, uint256 _saleStart, uint256 _saleEnd, bool _isWhitelisted) public returns (uint32) {
         require(baseOwner[_base] == _msgSender(), "Must be owner of base.");
-        releaseCount = releaseCount + 1;
         Release storage release = releases[releaseCount];
         release.base = _base;
         release.owner = _msgSender();
@@ -81,10 +88,14 @@ contract ComposeArt is ERC721, Ownable {
         ReleaseTiming storage releaseTiming = releaseTimings[releaseCount];
         releaseTiming.saleStart = _saleStart;
         releaseTiming.saleEnd = _saleEnd;
+
+        releaseCount = releaseCount + 1;
         return releaseCount;
     }
 
-    // TODO: Update this to manage balances of various owners
+    // TODO: Update this to manage balances of various owners.
+    // TODO: Update so that if any releases are not set with forever saleEnd
+    // and need their index set, that this happens before they can withdrawal
     function withdraw() payable public {
         uint balance = ownerBalance[_msgSender()];
         ownerBalance[_msgSender()] = 0;
@@ -98,7 +109,10 @@ contract ComposeArt is ERC721, Ownable {
     function mintPack(uint32 _releaseId, string memory _message, bytes memory _signature, address _signer, uint16 _numberOfPacks) public payable {
         Release storage release = releases[_releaseId];
         ReleaseTiming storage releaseTiming = releaseTimings[_releaseId];
-        require(releaseTiming.startingIndex == 0, "Sale not active");
+        require(block.timestamp >= releaseTiming.saleStart, "Sale not started");
+        require(block.timestamp <= releaseTiming.saleEnd, "Sale ended");
+        require(releaseTiming.startingIndexBlock == 0, "Sale not active");
+        
         if (release.isWhitelisted) {
             // TODO: Figure this boye out - figure out how to make the message the release id
             require(VerifySignature(config.verifySignatureAddress).verify(_signer, _msgSender(), 0, _message, 0, _signature), "Purchaser not on whitelist");
@@ -113,9 +127,14 @@ contract ComposeArt is ERC721, Ownable {
                 _safeMint(_msgSender(), mintIndex);
             }
         }
+        
         release.packsPurchased = release.packsPurchased + _numberOfPacks;
         // TODO: Figure out how to transfer moneys to the project owner (80% to artist, 20% to us)
         // TODO: Figure out royalties (1% to us, 2% to artist)
+
+        uint256 platformFee = msg.value / config.mintCut;
+        ownerBalance[owner()] = ownerBalance[owner()] + uint72(platformFee);
+        ownerBalance[_msgSender()] = ownerBalance[_msgSender()] + uint72(msg.value - platformFee);
 
         // If we haven't set the starting index and this is the last saleable token
         if (releaseTiming.startingIndexBlock == 0 && (release.packsPurchased == release.maxPacks || block.timestamp >= releaseTiming.saleEnd)) {
@@ -130,7 +149,7 @@ contract ComposeArt is ERC721, Ownable {
         Release storage release = releases[_releaseId];
         ReleaseTiming storage releaseTiming = releaseTimings[_releaseId];
         require(releaseTiming.startingIndex == 0, "Starting index already set");
-        if (releaseTiming.startingIndexBlock == 0 && (release.packsPurchased == release.maxPacks || block.timestamp >= releaseTiming.saleEnd)) {
+        if (release.packsPurchased == release.maxPacks || block.timestamp >= releaseTiming.saleEnd) {
             releaseTiming.startingIndexBlock = block.number;
         } 
         require(releaseTiming.startingIndexBlock != 0, "Starting index block not set");
