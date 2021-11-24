@@ -71,7 +71,12 @@ describe("ComposeArt", () => {
       await expect(composeArt.connect(accounts[2]).mintPack(0, "", "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 8, { value: ethers.utils.parseEther('0.08') })).to.be.revertedWith(
         "Max pack purchase exceeded"
       );
+      
+      let currentTokenId;
+
       await (await composeArt.connect(accounts[2]).mintPack(0, "", "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
+      currentTokenId = ethers.utils.formatEther(await composeArt.currentTokenId()) * 1000000000000000000;
+      expect(currentTokenId).to.equal(25);
       await (await composeArt.connect(accounts[3]).mintPack(0, "", "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
       await (await composeArt.connect(accounts[4]).mintPack(0, "", "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
       await expect(composeArt.connect(accounts[5]).mintPack(0, "", "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 6, { value: ethers.utils.parseEther('0.06') })).to.be.revertedWith(
@@ -81,6 +86,8 @@ describe("ComposeArt", () => {
       await expect(composeArt.connect(accounts[6]).mintPack(0, "", "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2, { value: ethers.utils.parseEther('0.02') })).to.be.revertedWith(
         "Sale not active"
       );
+      currentTokenId = ethers.utils.formatEther(await composeArt.currentTokenId()) * 1000000000000000000;
+      expect(currentTokenId).to.equal(100);
     })
   });
 

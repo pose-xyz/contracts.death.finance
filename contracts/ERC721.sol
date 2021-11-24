@@ -13,6 +13,7 @@ import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
 import { ERC165 } from "./ERC165.sol";
+import { IERC2981 } from "./IERC2981.sol";
 
 /**
  * @title ERC721 Non-Fungible Token Standard basic implementation
@@ -87,6 +88,14 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable 
      */
     bytes4 private constant _INTERFACE_ID_ERC721_ENUMERABLE = 0x780e9d63;
 
+    /*
+     *     bytes4(keccak256("royaltyInfo(uint256,uint256)")) == 0x2a55205a
+     *
+     *     => 0x2a55205a == 0x2a55205a
+     */
+    /// 
+    bytes4 private constant _INTERFACE_ID_ERC2981 = 0x2a55205a;
+
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
@@ -98,6 +107,8 @@ contract ERC721 is Context, ERC165, IERC721, IERC721Metadata, IERC721Enumerable 
         _registerInterface(_INTERFACE_ID_ERC721);
         _registerInterface(_INTERFACE_ID_ERC721_METADATA);
         _registerInterface(_INTERFACE_ID_ERC721_ENUMERABLE);
+        // Royalties interface
+        _registerInterface(_INTERFACE_ID_ERC2981);
     }
 
     /**

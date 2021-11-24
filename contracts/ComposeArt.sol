@@ -106,6 +106,10 @@ contract ComposeArt is ERC721, Ownable {
         _setBaseURI(_baseURI);
     }
 
+    function currentTokenId() public view returns(uint256) {
+        return totalSupply();
+    }
+
     function mintPack(uint32 _releaseId, string memory _message, bytes memory _signature, address _signer, uint16 _numberOfPacks) public payable {
         Release storage release = releases[_releaseId];
         ReleaseTiming storage releaseTiming = releaseTimings[_releaseId];
@@ -139,7 +143,7 @@ contract ComposeArt is ERC721, Ownable {
         // If we haven't set the starting index and this is the last saleable token
         if (releaseTiming.startingIndexBlock == 0 && (release.packsPurchased == release.maxPacks || block.timestamp >= releaseTiming.saleEnd)) {
             releaseTiming.startingIndexBlock = block.number;
-        } 
+        }
     }
 
     /**
