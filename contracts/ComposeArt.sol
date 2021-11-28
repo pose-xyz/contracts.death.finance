@@ -50,7 +50,9 @@ contract ComposeArt is ERC721, Ownable {
     mapping(uint32 => Release) public releases;
     mapping(uint32 => ReleaseTiming) public releaseTimings;
     mapping(address => bool) public personaAvailable;
+    // TODO: Set minimum balance needed to transact with platform
     mapping(address => uint72) public ownerBalance;
+    mapping(bytes32 => bool) public signatureRedeemed;
 
     constructor(string memory _name, string memory _symbol, address _signerAddress, address _verifySignatureAddress) ERC721(_name, _symbol) {
         config = Config(_signerAddress, _verifySignatureAddress, 10000000000000000, 0, 0);
@@ -73,6 +75,7 @@ contract ComposeArt is ERC721, Ownable {
         config.baseRegistrationFee = _baseRegistrationFee;
     }
 
+    // Utilize signature verification to ensure the integrity of provenance hash
     function createRelease(uint32 _base, bytes32 _provenanceHash, uint16 _maxPacks, uint8 _maxPackPurchase, uint64 _packPrice, uint8 _propsPerPack, uint256 _saleStart, uint256 _saleEnd, bool _isWhitelisted) public returns (uint32) {
         require(baseOwner[_base] == _msgSender(), "Must be owner of base.");
         Release storage release = releases[releaseCount];
@@ -110,7 +113,7 @@ contract ComposeArt is ERC721, Ownable {
         return totalSupply();
     }
 
-    function mintPack(uint32 _releaseId, string memory _message, bytes memory _signature, address _signer, uint16 _numberOfPacks) public payable {
+    function mintPack(uint32 _releaseId, bytes memory _signature, address _signer, uint16 _numberOfPacks) public payable {
         Release storage release = releases[_releaseId];
         ReleaseTiming storage releaseTiming = releaseTimings[_releaseId];
         require(block.timestamp >= releaseTiming.saleStart, "Sale not started");
@@ -119,7 +122,7 @@ contract ComposeArt is ERC721, Ownable {
         
         if (release.isWhitelisted) {
             // TODO: Figure this boye out - figure out how to make the message the release id
-            require(VerifySignature(config.verifySignatureAddress).verify(_signer, _msgSender(), 0, _message, 0, _signature), "Purchaser not on whitelist");
+            require(VerifySignature(config.verifySignatureAddress).verify(_signer, _msgSender(), _releaseId, _signature), "Purchaser not on whitelist");
         }
         require(_numberOfPacks <= release.maxPackPurchase, "Max pack purchase exceeded");
         require((release.packsPurchased + _numberOfPacks) <= release.maxPacks, "Not enough packs remaining");

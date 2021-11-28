@@ -1,16 +1,26 @@
-// const Web3 = require('web3')
-// const provider = new Web3.providers.HttpProvider('http://localhost:8545')
-// const web3 = new Web3(provider)
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
-// function toHex(str) {
-//  var hex = ''
-//  for(var i=0;i<str.length;i++) {
-//   hex += ''+str.charCodeAt(i).toString(16)
-//  }
-//  return hex
-// }
+describe("VerifySignature", function() {
 
-// let addr = web3.eth.accounts[0]
-// let msg = 'I really did make this message'
-// let signature = web3.eth.sign(addr, '0x' + toHex(msg))
-// console.log(signature)
+  it("Recover address from signature", async function() {
+
+    // Get the ContractFactory and Signers here.
+    const accounts = await ethers.getSigners();
+    const VerifySignature = await ethers.getContractFactory("VerifySignature");
+    const verifySignature = await VerifySignature.deploy();
+
+    let messageHash = ethers.utils.solidityKeccak256([ "address", "uint32" ], [ accounts[1].address, 0 ]);
+    const msgBytes = ethers.utils.arrayify(messageHash);
+
+    //Sign the messageHash
+    const signature = await accounts[0].signMessage(msgBytes);
+    //Recover the address from signature
+    const recoveredAddress = ethers.utils.verifyMessage(msgBytes, signature);
+    //Expect the recovered address is equal to the address of accounts[0] 
+    expect(recoveredAddress).to.equal(accounts[0].address);
+
+    const isValidSignature = await verifySignature.verify(accounts[0].address, accounts[1].address, 0, signature);
+    expect(isValidSignature).to.be.true;
+  });
+});
