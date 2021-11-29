@@ -13,6 +13,8 @@ describe("VerifySignature", function() {
     const VerifySignature = await ethers.getContractFactory("VerifySignature");
     if (network.name == 'kovan')
       verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+    else if (network.name == 'goerli')
+      verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
     else
       verifySignature = await VerifySignature.deploy();
 

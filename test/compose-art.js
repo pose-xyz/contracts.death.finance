@@ -15,11 +15,15 @@ describe("ComposeArt", () => {
     const VerifySignature = await ethers.getContractFactory("VerifySignature");
     if (network.name == 'kovan')
       verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+    else if (network.name == 'goerli')
+      verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
     else
       verifySignature = await VerifySignature.deploy();
 
     const ComposeArt = await ethers.getContractFactory("ComposeArt");
     if (network.name == 'kovan')
+      composeArt = await ComposeArt.attach("0x576D9ce81405a147f6BCfEB121919CdfA83E5Df4");
+    else if (network.name == 'goerli')
       composeArt = await ComposeArt.attach("0x576D9ce81405a147f6BCfEB121919CdfA83E5Df4");
     else
       composeArt = await ComposeArt.deploy(
@@ -34,7 +38,7 @@ describe("ComposeArt", () => {
 
     it("createBase", async () => {
 
-      if (network.name != 'kovan') {
+      if (network.name != 'kovan' && network.name != 'goerli') {
         await (await composeArt.connect(accounts[0]).setCuts(5, 100)).wait();
         
         expect(await composeArt.baseCount()).to.equal(0);
