@@ -5,10 +5,16 @@ describe("VerifySignature", function() {
 
   it("Recover address from signature", async function() {
 
+    const network = await ethers.provider.getNetwork();
+    let verifySignature;
+
     // Get the ContractFactory and Signers here.
     const accounts = await ethers.getSigners();
     const VerifySignature = await ethers.getContractFactory("VerifySignature");
-    const verifySignature = await VerifySignature.deploy();
+    if (network.name == 'kovan')
+      verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+    else
+      verifySignature = await VerifySignature.deploy();
 
     let messageHash = ethers.utils.solidityKeccak256([ "address", "uint32" ], [ accounts[1].address, 0 ]);
     const msgBytes = ethers.utils.arrayify(messageHash);

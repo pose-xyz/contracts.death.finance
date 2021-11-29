@@ -7,12 +7,11 @@ async function main() {
 
   const VerifySignature = await ethers.getContractFactory("VerifySignature");
   const verifySignature = await VerifySignature.deploy();
-
-  console.log("VerifySignature address:", verifySignature.address);
+  console.log("VerifySignature deployed to:", verifySignature.address);
 
   const ComposeArt = await ethers.getContractFactory("ComposeArt");
   const composeArt = await ComposeArt.deploy("ComposeArt", "COMP", "0x0000000000000000000000000000000000000000", verifySignature.address);
-  console.log("ComposeArt address:", composeArt.address);
+  console.log("ComposeArt deployed to:", composeArt.address);
 }
 
 main()
