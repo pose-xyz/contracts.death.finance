@@ -64,6 +64,14 @@ contract ComposeArt is ERC721, Ownable {
         config.royaltyCut = _royaltyCut;
     }
 
+    function setIsWhitelisted(bool _isWhitelisted) public onlyOwner {
+        config.isWhitelisted = _isWhitelisted;
+    }
+
+    function setSigner(address _signerAddress) public onlyOwner {
+        config.signerAddress = _signerAddress;
+    }
+
     function createBaseFromWhitelist(address _to, uint32 _id, bytes memory _signature, address _signer) payable public returns (uint32) {
         require(config.isWhitelisted, "Config is not whitelisted.");
         require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _id, _signature), "Purchaser not on whitelist");
