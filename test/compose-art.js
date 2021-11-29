@@ -56,7 +56,7 @@ describe("ComposeArt", () => {
       await (await composeArt.connect(accounts[1]).createRelease(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", 20, 6, ethers.utils.parseEther('0.01'), 5, currentBlock.timestamp + 5, currentBlock.timestamp + 60, false)).wait();
       expect(await composeArt.releaseCount()).to.equal(1);
       
-      await expect(composeArt.connect(accounts[2]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2)).to.be.revertedWith(
+      await expect(composeArt.connect(accounts[2]).mintPack(accounts[2].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2)).to.be.revertedWith(
         "Sale not started"
       );
       
@@ -64,17 +64,17 @@ describe("ComposeArt", () => {
         await ethers.provider.send('evm_mine');
       }
 
-      await expect(composeArt.connect(accounts[2]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2, { value: ethers.utils.parseEther('0.01') })).to.be.revertedWith(
+      await expect(composeArt.connect(accounts[2]).mintPack(accounts[2].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2, { value: ethers.utils.parseEther('0.01') })).to.be.revertedWith(
         "Not enough ETH sent"
       );
 
-      await expect(composeArt.connect(accounts[2]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 8, { value: ethers.utils.parseEther('0.08') })).to.be.revertedWith(
+      await expect(composeArt.connect(accounts[2]).mintPack(accounts[3].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 8, { value: ethers.utils.parseEther('0.08') })).to.be.revertedWith(
         "Max pack purchase exceeded"
       );
       
       let currentTokenId;
 
-      tx = await composeArt.connect(accounts[2]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') });
+      tx = await composeArt.connect(accounts[2]).mintPack(accounts[2].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') });
       receipt = await tx.wait();
       data = (await ethers.provider.getTransaction(tx.hash)).data;
       receoveredInputs = ethers.utils.defaultAbiCoder.decode(
@@ -85,13 +85,13 @@ describe("ComposeArt", () => {
 
       currentTokenId = ethers.utils.formatEther(await composeArt.currentTokenId()) * 1000000000000000000;
       expect(currentTokenId).to.equal(25);
-      await (await composeArt.connect(accounts[3]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
-      await (await composeArt.connect(accounts[4]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
-      await expect(composeArt.connect(accounts[5]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 6, { value: ethers.utils.parseEther('0.06') })).to.be.revertedWith(
+      await (await composeArt.connect(accounts[3]).mintPack(accounts[3].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
+      await (await composeArt.connect(accounts[4]).mintPack(accounts[4].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
+      await expect(composeArt.connect(accounts[5]).mintPack(accounts[5].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 6, { value: ethers.utils.parseEther('0.06') })).to.be.revertedWith(
         "Not enough packs remaining"
       );
-      await (await composeArt.connect(accounts[5]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
-      await expect(composeArt.connect(accounts[6]).mintPack(0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2, { value: ethers.utils.parseEther('0.02') })).to.be.revertedWith(
+      await (await composeArt.connect(accounts[5]).mintPack(accounts[5].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') })).wait();
+      await expect(composeArt.connect(accounts[6]).mintPack(accounts[6].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 2, { value: ethers.utils.parseEther('0.02') })).to.be.revertedWith(
         "Sale not active"
       );
       currentTokenId = ethers.utils.formatEther(await composeArt.currentTokenId()) * 1000000000000000000;

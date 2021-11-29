@@ -43,6 +43,7 @@ contract ComposeArt is ERC721, Ownable {
         uint64 baseRegistrationFee;
         uint8 mintCut;
         uint8 royaltyCut;
+        bool isWhitelisted;
     }
     Config config;
 
@@ -55,7 +56,7 @@ contract ComposeArt is ERC721, Ownable {
     mapping(bytes32 => bool) public signatureRedeemed;
 
     constructor(string memory _name, string memory _symbol, address _signerAddress, address _verifySignatureAddress) ERC721(_name, _symbol) {
-        config = Config(_signerAddress, _verifySignatureAddress, 10000000000000000, 0, 0);
+        config = Config(_signerAddress, _verifySignatureAddress, 10000000000000000, 0, 0, false);
     }
 
     function setCuts(uint8 _mintCut, uint8 _royaltyCut) public onlyOwner {
@@ -63,7 +64,18 @@ contract ComposeArt is ERC721, Ownable {
         config.royaltyCut = _royaltyCut;
     }
 
+    function createBaseFromWhitelist(address _to, uint32 _id, bytes memory _signature, address _signer) payable public returns (uint32) {
+        require(config.isWhitelisted, "Config is not whitelisted.");
+        require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _id, _signature), "Purchaser not on whitelist");
+        require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
+        baseOwner[baseCount] = _to;
+        ownerBalance[owner()] = ownerBalance[owner()] + uint72(msg.value);
+        baseCount = baseCount + 1;
+        return baseCount;
+    }
+
     function createBase() payable public returns (uint32) {
+        require(!config.isWhitelisted, "Config is not whitelisted.");
         require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
         baseOwner[baseCount] = _msgSender();
         ownerBalance[owner()] = ownerBalance[owner()] + uint72(msg.value);
@@ -113,16 +125,15 @@ contract ComposeArt is ERC721, Ownable {
         return totalSupply();
     }
 
-    function mintPack(uint32 _releaseId, bytes memory _signature, address _signer, uint16 _numberOfPacks) public payable {
-        Release storage release = releases[_releaseId];
-        ReleaseTiming storage releaseTiming = releaseTimings[_releaseId];
+    function mintPack(address _to, uint32 _id, bytes memory _signature, address _signer, uint16 _numberOfPacks) public payable {
+        Release storage release = releases[_id];
+        ReleaseTiming storage releaseTiming = releaseTimings[_id];
         require(block.timestamp >= releaseTiming.saleStart, "Sale not started");
         require(block.timestamp <= releaseTiming.saleEnd, "Sale ended");
         require(releaseTiming.startingIndexBlock == 0, "Sale not active");
         
         if (release.isWhitelisted) {
-            // TODO: Figure this boye out - figure out how to make the message the release id
-            require(VerifySignature(config.verifySignatureAddress).verify(_signer, _msgSender(), _releaseId, _signature), "Purchaser not on whitelist");
+            require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _id, _signature), "Purchaser not on whitelist");
         }
         require(_numberOfPacks <= release.maxPackPurchase, "Max pack purchase exceeded");
         require((release.packsPurchased + _numberOfPacks) <= release.maxPacks, "Not enough packs remaining");
@@ -131,7 +142,7 @@ contract ComposeArt is ERC721, Ownable {
         for(uint i = 0; i < _numberOfPacks; i++) {
             for(uint j = 0; j < release.propsPerPack; j++) {
                 uint mintIndex = totalSupply();
-                _safeMint(_msgSender(), mintIndex);
+                _safeMint(_to, mintIndex);
             }
         }
         
@@ -141,7 +152,7 @@ contract ComposeArt is ERC721, Ownable {
 
         uint256 platformFee = msg.value / config.mintCut;
         ownerBalance[owner()] = ownerBalance[owner()] + uint72(platformFee);
-        ownerBalance[_msgSender()] = ownerBalance[_msgSender()] + uint72(msg.value - platformFee);
+        ownerBalance[_to] = ownerBalance[_to] + uint72(msg.value - platformFee);
 
         // If we haven't set the starting index and this is the last saleable token
         if (releaseTiming.startingIndexBlock == 0 && (release.packsPurchased == release.maxPacks || block.timestamp >= releaseTiming.saleEnd)) {
