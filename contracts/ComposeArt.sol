@@ -54,6 +54,7 @@ contract ComposeArt is ERC721, Ownable {
     // TODO: Set minimum balance needed to transact with platform
     mapping(address => uint72) public ownerBalance;
     mapping(bytes32 => bool) public signatureRedeemed;
+    // TODO: Differentiate between release and base signatures
 
     constructor(string memory _name, string memory _symbol, address _signerAddress, address _verifySignatureAddress) ERC721(_name, _symbol) {
         config = Config(_signerAddress, _verifySignatureAddress, 10000000000000000, 0, 0, false);
@@ -74,7 +75,7 @@ contract ComposeArt is ERC721, Ownable {
 
     function createBaseFromWhitelist(address _to, uint32 _id, bytes memory _signature, address _signer) payable public returns (uint32) {
         require(config.isWhitelisted, "Config is not whitelisted.");
-        require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _id, _signature), "Purchaser not on whitelist");
+        require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _id, _signature), "Creator not on whitelist");
         require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
         baseOwner[baseCount] = _to;
         ownerBalance[owner()] = ownerBalance[owner()] + uint72(msg.value);
@@ -95,6 +96,8 @@ contract ComposeArt is ERC721, Ownable {
         config.baseRegistrationFee = _baseRegistrationFee;
     }
 
+    // TODO: Make this whitelisted to ensure that provenance isn't tampered with 
+    // (use provenancehash + releaseid to ensure uniqueness)
     // Utilize signature verification to ensure the integrity of provenance hash
     function createRelease(uint32 _base, bytes32 _provenanceHash, uint16 _maxPacks, uint8 _maxPackPurchase, uint64 _packPrice, uint8 _propsPerPack, uint256 _saleStart, uint256 _saleEnd, bool _isWhitelisted) public returns (uint32) {
         require(baseOwner[_base] == _msgSender(), "Must be owner of base.");
@@ -116,8 +119,8 @@ contract ComposeArt is ERC721, Ownable {
         return releaseCount;
     }
 
-    // TODO: Update this to manage balances of various owners.
     // TODO: Update so that if any releases are not set with forever saleEnd
+    // TODO: Update this to use multisig for contract owner
     // and need their index set, that this happens before they can withdrawal
     function withdraw() payable public {
         uint balance = ownerBalance[_msgSender()];

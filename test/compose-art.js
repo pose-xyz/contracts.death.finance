@@ -72,8 +72,8 @@ describe("ComposeArt", () => {
         tx = await composeArt.connect(accounts[2]).mintPack(accounts[2].address, 0, "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A", "0x0000000000000000000000000000000000000000", 5, { value: ethers.utils.parseEther('0.05') });
         receipt = await tx.wait();
         data = (await ethers.provider.getTransaction(tx.hash)).data;
-        receoveredInputs = ethers.utils.defaultAbiCoder.decode(
-          [ 'uint32', 'string', 'bytes32', 'address', 'uint16' ],
+        recoveredInputs = ethers.utils.defaultAbiCoder.decode(
+          [ 'address', 'uint32', 'bytes', 'address', 'uint16' ],
           ethers.utils.hexDataSlice(data, 4)
         );
         // console.log(recoveredInputs);
