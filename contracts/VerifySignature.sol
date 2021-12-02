@@ -5,9 +5,10 @@ contract VerifySignature {
     
     function getMessageHash(
         address _to,
-        uint32 _id
+        uint32 _id,
+        bool _isBase
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_to, _id));
+        return keccak256(abi.encodePacked(_to, _id, _isBase));
     }
 
     function recover(
@@ -23,9 +24,10 @@ contract VerifySignature {
         address _signer,
         address _to,
         uint32 _id,
+        bool _isBase,
         bytes memory signature
     ) public pure returns (bool) {
-        bytes32 payloadHash = getMessageHash(_to, _id);
+        bytes32 payloadHash = getMessageHash(_to, _id, _isBase);
         bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payloadHash));
         return recoverSigner(messageHash, signature) == _signer;
     }

@@ -18,7 +18,7 @@ describe("VerifySignature", function() {
     else
       verifySignature = await VerifySignature.deploy();
 
-    let messageHash = ethers.utils.solidityKeccak256([ "address", "uint32" ], [ accounts[1].address, 0 ]);
+    let messageHash = ethers.utils.solidityKeccak256([ "address", "uint32", "bool" ], [ accounts[1].address, 0, false ]);
     const msgBytes = ethers.utils.arrayify(messageHash);
 
     //Sign the messageHash
@@ -28,7 +28,7 @@ describe("VerifySignature", function() {
     //Expect the recovered address is equal to the address of accounts[0] 
     expect(recoveredAddress).to.equal(accounts[0].address);
 
-    const isValidSignature = await verifySignature.verify(accounts[0].address, accounts[1].address, 0, signature);
+    const isValidSignature = await verifySignature.verify(accounts[0].address, accounts[1].address, 0, false, signature);
     expect(isValidSignature).to.be.true;
   });
 });
