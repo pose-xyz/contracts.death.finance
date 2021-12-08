@@ -5,9 +5,18 @@ pragma solidity >= 0.8.0;
 contract Fight {
 
     address controller;
+    bool[169] elementsMatrix;
 
-    constructor () {
+    constructor (uint256 _elementsMatrix) {
         controller = msg.sender;
+
+        for(uint i=0;i<169;i++) {
+            elementsMatrix[i] = ((_elementsMatrix >> i) & 1) == 1;
+        }
+    }
+
+    function elementBoost(uint8 _eo, uint8 _et) public view returns (bool) {
+        return elementsMatrix[_eo * 13 + _et];
     }
 
     function fight(uint32 _fo, uint32 _ft) public view returns (uint32, uint32) {
@@ -25,7 +34,7 @@ contract Fight {
         
         uint256 rn = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
 
-        for (uint b=0;b<3;b++) {
+        for (uint b=0;b<10;b++) {
             if (fos)
                 (ftd, ftsd, rn) = attack(foa, fosa, ftd, ftsd, rn);
                 if (fod == 0 || ftd == 0)
