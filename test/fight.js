@@ -65,42 +65,46 @@ describe("Fight", function() {
         // 0000     = 0-15 special attack
         // 0000     = 0-15 special defense
         // 0000     = 0-15 special element
-        // 000001 000001 0111 1111 0111 1111 (Example)
-        // 000010 000010 0111 1111 0111 1110 (Example)
+        // 000001 000001 0111 1111 1100 0111 1111 1010 (Example)
+        // 000010 000010 0111 1111 1011 0111 1110 0111 (Example)
         // const stats = await fight.fight(32639, 32638);
         // console.log(stats);
-        // 0111 1111 0111 1111
-        // 0111 1111 0111 1110
+        // 0111 1111 1100 0111 1111 1010
+        // 0111 1111 1011 0111 1110 0111
 
         const zeroPad = (num, places) => String(num).padStart(places, '0')
 
-        let fighterOneStats = 32639;
-        let fighterTwoStats = 32638;
-        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 16);
-        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 16);
+        let fighterOneStats = 8374266;
+        let fighterTwoStats = 8370151;
+        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
+        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
         console.log("------------------PLAYER ONE------------------")
         console.log("Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
         console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
-        console.log("Special Attack: ",  parseInt(fighterOneStatsBin.substring(8, 12), 2));
-        console.log("Special Defense: ", parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Element: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
+        console.log("Special Attack: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Special Defense: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
+        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
         console.log("\n");
         console.log("------------------PLAYER TWO------------------")
         console.log("Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
         console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
-        console.log("Special Attack: ",  parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-        console.log("Special Defense: ", parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Element: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
+        console.log("Special Attack: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Special Defense: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
+        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
         console.log("\n");
         console.log("---------------------FIGHT---------------------");
         console.log("\n");
 
         let isPlayerOne =   (parseInt(fighterOneStatsBin.substring(0, 4), 2) + parseInt(fighterOneStatsBin.substring(4, 8), 2) +
-                            parseInt(fighterOneStatsBin.substring(8, 12), 2) + parseInt(fighterOneStatsBin.substring(12, 16), 2)) <=
+                            parseInt(fighterOneStatsBin.substring(12, 16), 2) + parseInt(fighterOneStatsBin.substring(16, 20), 2)) <=
                             (parseInt(fighterTwoStatsBin.substring(0, 4), 2) + parseInt(fighterTwoStatsBin.substring(4, 8), 2) +
-                            parseInt(fighterTwoStatsBin.substring(8, 12), 2) + parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+                            parseInt(fighterTwoStatsBin.substring(12, 16), 2) + parseInt(fighterTwoStatsBin.substring(16, 20), 2));
 
         [fighterOneStats, fighterTwoStats, eventLog] = await fight.fight(fighterOneStats, fighterTwoStats);
-        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 16);
-        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 16);
+        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
+        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
 
         eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
         eventLog = zeroPad(eventLog, eventLog.length + ((eventLog.length % 4) > 0 ? 4 - (eventLog.length % 4) : 0));
@@ -113,14 +117,18 @@ describe("Fight", function() {
         console.log("------------------PLAYER ONE------------------")
         console.log("Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
         console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
-        console.log("Special Attack: ",  parseInt(fighterOneStatsBin.substring(8, 12), 2));
-        console.log("Special Defense: ", parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Element: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
+        console.log("Special Attack: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Special Defense: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
+        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
         console.log("\n");
         console.log("------------------PLAYER TWO------------------")
         console.log("Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
         console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
-        console.log("Special Attack: ",  parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-        console.log("Special Defense: ", parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Element: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
+        console.log("Special Attack: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Special Defense: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
+        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
         console.log("\n");
     });
 });
