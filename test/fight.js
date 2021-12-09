@@ -52,7 +52,7 @@ describe("Fight", function() {
         // // For Verifying Element Boost
         // for(let i = 0; i < 13; i++) {
         //     for(let j = 0; j < 13; j++) {
-        //         let powerUp = await fight.elementBoost(i, j);
+        //         let powerUp = await fight.elementIsStrong(i, j);
         //         console.log(`${i},${j}: ${powerUp}`);
         //     }
         // }
@@ -69,13 +69,13 @@ describe("Fight", function() {
         // 000010 000010 0111 1111 1011 0111 1110 0111 (Example)
         // const stats = await fight.fight(32639, 32638);
         // console.log(stats);
-        // 0111 1111 1100 0111 1111 1010
-        // 0111 1111 1011 0111 1110 0111
+        // 0111 1111 0011 0111 1111 0011
+        // 0111 1111 0010 0111 1110 0010
 
         const zeroPad = (num, places) => String(num).padStart(places, '0')
 
-        let fighterOneStats = 8374266;
-        let fighterTwoStats = 8370151;
+        let fighterOneStats = 8337395;
+        let fighterTwoStats = 8333282;
         fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
         fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
         console.log("------------------PLAYER ONE------------------")

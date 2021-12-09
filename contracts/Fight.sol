@@ -25,12 +25,12 @@ contract Fight {
         }
     }
 
-    function elementIsStrong(uint8 _eo, uint8 _et) public view returns (bool) {
-        return elementsMatrix[_eo * 13 + _et];
+    function elementIsStrong(uint32 _eo, uint32 _et) public view returns (bool) {
+        return elementsMatrix[_et * 13 + _eo];
     }
 
-    function elementIsWeak(uint8 _eo, uint8 _et) public view returns (bool) {
-        return elementsMatrix[_et * 13 + _eo];
+    function elementIsWeak(uint32 _eo, uint32 _et) public view returns (bool) {
+        return elementsMatrix[_eo * 13 + _et];
     }
 
     function fight(uint32 _fighterOne, uint32 _fighterTwo) public view returns (uint32, uint32, uint128) {
@@ -71,13 +71,13 @@ contract Fight {
     function attack(Fighter memory attacker, Fighter memory defender, uint128 _el, uint256 _r) internal view returns(Fighter memory, uint128, uint256) {
         uint32 e;
         if (defender.specialDefense > 0) {
-            e = uint32(_r % attacker.specialAttack);
+            e = uint32(_r % (elementIsStrong(attacker.specialElement, defender.specialElement) ? (attacker.specialAttack * 2) : attacker.specialAttack));
             if (e > defender.specialDefense)
                 defender.specialDefense = 0;
             else
                 defender.specialDefense = defender.specialDefense - e;
         } else {
-            e = uint32(_r % attacker.attack);
+            e = uint32(_r % (elementIsStrong(attacker.element, defender.element) ? (attacker.attack * 2) : attacker.attack));
             if (e > defender.defense)
                 defender.defense = 0;
             else
