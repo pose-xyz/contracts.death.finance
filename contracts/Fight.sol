@@ -56,9 +56,9 @@ contract Fight {
 
         for (uint b=0;b<BOUTS;b++) {
             if (pom) {
-                (fighterTwo.defense, fighterTwo.specialDefense, eventLog, randomNumber) = attack(fighterOne.attack, fighterOne.specialAttack, fighterTwo.defense, fighterTwo.specialDefense, eventLog, randomNumber);
+                (fighterTwo, eventLog, randomNumber) = attack(fighterOne, fighterTwo, eventLog, randomNumber);
             } else {
-                (fighterOne.defense, fighterOne.specialDefense, eventLog, randomNumber) = attack(fighterTwo.attack, fighterTwo.specialAttack, fighterOne.defense, fighterOne.specialDefense, eventLog, randomNumber);
+                (fighterOne, eventLog, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber);
             }
             if (fighterOne.defense == 0 || fighterTwo.defense == 0)
                 break;
@@ -68,22 +68,22 @@ contract Fight {
         return ((fighterOne.attack << 20) + (fighterOne.defense << 16) + (fighterOne.element << 12) + (fighterOne.specialAttack << 8) + (fighterOne.specialDefense << 4) + fighterOne.specialElement, (fighterTwo.attack << 20) + (fighterTwo.defense << 16) + (fighterTwo.element << 12) + (fighterTwo.specialAttack << 8) + (fighterTwo.specialDefense << 4) + fighterTwo.specialElement, eventLog);
     }
 
-    function attack(uint32 _a, uint32 _sa, uint32 _d, uint32 _sd, uint128 _el, uint256 _r) internal view returns(uint32, uint32, uint128, uint256) {
+    function attack(Fighter memory attacker, Fighter memory defender, uint128 _el, uint256 _r) internal view returns(Fighter memory, uint128, uint256) {
         uint32 e;
-        if (_sd > 0) {
-            e = uint32(_r % _sa);
-            if (e > _sd)
-                _sd = 0;
+        if (defender.specialDefense > 0) {
+            e = uint32(_r % attacker.specialAttack);
+            if (e > defender.specialDefense)
+                defender.specialDefense = 0;
             else
-                _sd = _sd - e;
+                defender.specialDefense = defender.specialDefense - e;
         } else {
-            e = uint32(_r % _a);
-            if (e > _d)
-                _d = 0;
+            e = uint32(_r % attacker.attack);
+            if (e > defender.defense)
+                defender.defense = 0;
             else
-                _d = _d - e;
+                defender.defense = defender.defense - e;
         }
         _el = (_el << 4) + e;
-        return (_d, _sd, _el, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _r))));
+        return (defender, _el, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _r))));
     }
 }
