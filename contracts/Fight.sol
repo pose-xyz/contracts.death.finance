@@ -6,6 +6,7 @@ contract Fight {
 
     address controller;
     bool[169] elementsMatrix;
+    uint constant BOUTS = 20;
 
     constructor (uint256 _elementsMatrix) {
         controller = msg.sender;
@@ -23,7 +24,7 @@ contract Fight {
         return elementsMatrix[_et * 13 + _eo];
     }
 
-    function fight(uint32 _fo, uint32 _ft) public view returns (uint32, uint32, uint256) {
+    function fight(uint32 _fo, uint32 _ft) public view returns (uint32, uint32, uint128) {
         uint32 fosd = _fo & 15;
         uint32 fosa = (_fo >> 4) & 15;
         uint32 fod = (_fo  >> 8) & 15;
@@ -35,49 +36,39 @@ contract Fight {
         uint32 fta = (_ft >> 12) & 15;
         
         uint256 rn = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
-        uint32 e;
-        uint256 el;
+        uint128 el;
+        bool pom = (fosd + fosa + fod + foa) <= (ftsd + ftsa + ftd + fta);
 
-        for (uint b=0;b<2;b++) {
-            if ((fosd + fosa + fod + foa) > (ftsd + ftsa + ftd + fta)) {
-                (ftd, ftsd, e, rn) = attack(foa, fosa, ftd, ftsd, rn);
-                el = (el << 4) + e;
-                if (fod == 0 || ftd == 0)
-                    break;
-                (fod, fosd, e, rn) = attack(fta, ftsa, fod, fosd, rn);
-                el = (el << 4) + e;
-                if (fod == 0 || ftd == 0)
-                    break;
+        for (uint b=0;b<BOUTS;b++) {
+            if (pom) {
+                (ftd, ftsd, el, rn) = attack(foa, fosa, ftd, ftsd, el, rn);
             } else {
-                (fod, fosd, e, rn) = attack(fta, ftsa, fod, fosd, rn);
-                el = (el << 4) + e;
-                if (fod == 0 || ftd == 0)
-                    break;
-                (ftd, ftsd, e, rn) = attack(foa, fosa, ftd, ftsd, rn);
-                el = (el << 4) + e;
-                if (fod == 0 || ftd == 0)
-                    break;
+                (fod, fosd, el, rn) = attack(fta, ftsa, fod, fosd, el, rn);
             }
+            if (fod == 0 || ftd == 0)
+                break;
+            pom = !pom;
         }
 
         return ((foa << 12) + (fod << 8) + (fosa << 4) + fosd, (fta << 12) + (ftd << 8) + (ftsa << 4) + ftsd, el);
     }
 
-    function attack(uint32 _a, uint32 _sa, uint32 _d, uint32 _sd, uint256 _r) internal view returns(uint32, uint32, uint32, uint256) {
-        uint32 a;
+    function attack(uint32 _a, uint32 _sa, uint32 _d, uint32 _sd, uint128 _el, uint256 _r) internal view returns(uint32, uint32, uint128, uint256) {
+        uint32 e;
         if (_sd > 0) {
-            a = uint32(_r % _sa) + 1;
-            if (a > _sd)
+            e = uint32(_r % _sa) + 1;
+            if (e > _sd)
                 _sd = 0;
             else
-                _sd = _sd - a;
+                _sd = _sd - e;
         } else {
-            a = uint32(_r % _a) + 1;
-            if (a > _d)
+            e = uint32(_r % _a) + 1;
+            if (e > _d)
                 _d = 0;
             else
-                _d = _d - a;
+                _d = _d - e;
         }
-        return (_d, _sd, a, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _r))));
+        _el = (_el << 4) + e;
+        return (_d, _sd, _el, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _r))));
     }
 }
