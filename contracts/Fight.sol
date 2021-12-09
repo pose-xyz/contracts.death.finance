@@ -56,13 +56,13 @@ contract Fight {
     function attack(uint32 _a, uint32 _sa, uint32 _d, uint32 _sd, uint128 _el, uint256 _r) internal view returns(uint32, uint32, uint128, uint256) {
         uint32 e;
         if (_sd > 0) {
-            e = uint32(_r % _sa) + 1;
+            e = uint32(_r % _sa);
             if (e > _sd)
                 _sd = 0;
             else
                 _sd = _sd - e;
         } else {
-            e = uint32(_r % _a) + 1;
+            e = uint32(_r % _a);
             if (e > _d)
                 _d = 0;
             else
