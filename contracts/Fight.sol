@@ -15,6 +15,7 @@ contract Fight {
         uint32 element;
         uint32 defense;
         uint32 attack;
+        bool isTurn;
     }
 
     constructor (uint256 _elementsMatrix) {
@@ -25,12 +26,12 @@ contract Fight {
         }
     }
 
-    function elementIsStrong(uint32 _eo, uint32 _et) public view returns (bool) {
-        return elementsMatrix[_et * 13 + _eo];
+    function elementIsStrong(uint32 _elementOne, uint32 _elementTwo) public view returns (bool) {
+        return elementsMatrix[_elementTwo * 13 + _elementOne];
     }
 
-    function elementIsWeak(uint32 _eo, uint32 _et) public view returns (bool) {
-        return elementsMatrix[_eo * 13 + _et];
+    function elementIsWeak(uint32 _elementOne, uint32 _elementTwo) public view returns (bool) {
+        return elementsMatrix[_elementOne * 13 + _elementTwo];
     }
 
     function fight(uint32 _fighterOne, uint32 _fighterTwo) public view returns (uint32, uint32, uint128) {
@@ -52,38 +53,44 @@ contract Fight {
         
         uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
         uint128 eventLog;
-        bool pom = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
+        bool isCritical;
+        fighterOne.isTurn = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
 
         for (uint b=0;b<BOUTS;b++) {
-            if (pom) {
-                (fighterTwo, eventLog, randomNumber) = attack(fighterOne, fighterTwo, eventLog, randomNumber);
+            if (fighterOne.isTurn) {
+                (fighterTwo, eventLog, isCritical, randomNumber) = attack(fighterOne, fighterTwo, isCritical, eventLog, randomNumber);
             } else {
-                (fighterOne, eventLog, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber);
+                (fighterOne, eventLog, isCritical, randomNumber) = attack(fighterTwo, fighterOne, isCritical, eventLog, randomNumber);
             }
             if (fighterOne.defense == 0 || fighterTwo.defense == 0)
                 break;
-            pom = !pom;
+            if (!isCritical) {
+                fighterOne.isTurn = !fighterOne.isTurn;
+                fighterTwo.isTurn = !fighterTwo.isTurn;
+            }
         }
 
         return ((fighterOne.attack << 20) + (fighterOne.defense << 16) + (fighterOne.element << 12) + (fighterOne.specialAttack << 8) + (fighterOne.specialDefense << 4) + fighterOne.specialElement, (fighterTwo.attack << 20) + (fighterTwo.defense << 16) + (fighterTwo.element << 12) + (fighterTwo.specialAttack << 8) + (fighterTwo.specialDefense << 4) + fighterTwo.specialElement, eventLog);
     }
 
-    function attack(Fighter memory attacker, Fighter memory defender, uint128 _el, uint256 _r) internal view returns(Fighter memory, uint128, uint256) {
+    function attack(Fighter memory _attacker, Fighter memory _defender, bool _isCritical, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, uint128, bool, uint256) {
         uint32 e;
-        if (defender.specialDefense > 0) {
-            e = uint32(_r % (elementIsStrong(attacker.specialElement, defender.specialElement) ? (attacker.specialAttack * 2) : attacker.specialAttack));
-            if (e > defender.specialDefense)
-                defender.specialDefense = 0;
+        if (_defender.specialDefense > 0) {
+            e = uint32(_randomNumber % (elementIsStrong(_attacker.specialElement, _defender.specialElement) ? (_attacker.specialAttack * 2) + 1 : _attacker.specialAttack + 1));
+            _isCritical = elementIsStrong(_attacker.specialElement, _defender.specialElement) ? e == (_attacker.specialAttack * 2) : e == _attacker.specialAttack;
+            if (e > _defender.specialDefense)
+                _defender.specialDefense = 0;
             else
-                defender.specialDefense = defender.specialDefense - e;
+                _defender.specialDefense = _defender.specialDefense - e;
         } else {
-            e = uint32(_r % (elementIsStrong(attacker.element, defender.element) ? (attacker.attack * 2) : attacker.attack));
-            if (e > defender.defense)
-                defender.defense = 0;
+            e = uint32(_randomNumber % (elementIsStrong(_attacker.element, _defender.element) ? (_attacker.attack * 2) + 1 : _attacker.attack + 1));
+            _isCritical = elementIsStrong(_attacker.element, _defender.element) ? e == (_attacker.attack * 2) : e == _attacker.attack;
+            if (e > _defender.defense)
+                _defender.defense = 0;
             else
-                defender.defense = defender.defense - e;
+                _defender.defense = _defender.defense - e;
         }
-        _el = (_el << 4) + e;
-        return (defender, _el, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _r))));
+        _eventLog = (_eventLog << 4) + e;
+        return (_defender, _eventLog, _isCritical, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))));
     }
 }
