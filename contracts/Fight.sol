@@ -6,7 +6,16 @@ contract Fight {
 
     address controller;
     bool[169] elementsMatrix;
-    uint constant BOUTS = 20;
+    uint constant BOUTS = 10;
+
+    struct Fighter {
+        uint32 specialDefense;
+        uint32 specialAttack;
+        uint32 specialElement;
+        uint32 defense;
+        uint32 attack;
+        uint32 element;
+    }
 
     constructor (uint256 _elementsMatrix) {
         controller = msg.sender;
@@ -24,33 +33,35 @@ contract Fight {
         return elementsMatrix[_et * 13 + _eo];
     }
 
-    function fight(uint32 _fo, uint32 _ft) public view returns (uint32, uint32, uint128) {
-        uint32 fosd = _fo & 15;
-        uint32 fosa = (_fo >> 4) & 15;
-        uint32 fod = (_fo  >> 8) & 15;
-        uint32 foa = (_fo >> 12) & 15;
+    function fight(uint32 _fighterOne, uint32 _fighterTwo) public view returns (uint32, uint32, uint128) {
+        Fighter memory fighterOne;
+        fighterOne.specialDefense = _fighterOne & 15;
+        fighterOne.specialAttack = (_fighterOne >> 4) & 15;
+        fighterOne.defense = (_fighterOne  >> 8) & 15;
+        fighterOne.attack = (_fighterOne >> 12) & 15;
 
-        uint32 ftsd = _ft & 15;
-        uint32 ftsa = (_ft >> 4) & 15;
-        uint32 ftd = (_ft  >> 8) & 15;
-        uint32 fta = (_ft >> 12) & 15;
+        Fighter memory fighterTwo;
+        fighterTwo.specialDefense = _fighterTwo & 15;
+        fighterTwo.specialAttack = (_fighterTwo >> 4) & 15;
+        fighterTwo.defense = (_fighterTwo  >> 8) & 15;
+        fighterTwo.attack = (_fighterTwo >> 12) & 15;
         
-        uint256 rn = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
-        uint128 el;
-        bool pom = (fosd + fosa + fod + foa) <= (ftsd + ftsa + ftd + fta);
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
+        uint128 eventLog;
+        bool pom = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
 
         for (uint b=0;b<BOUTS;b++) {
             if (pom) {
-                (ftd, ftsd, el, rn) = attack(foa, fosa, ftd, ftsd, el, rn);
+                (fighterTwo.defense, fighterTwo.specialDefense, eventLog, randomNumber) = attack(fighterOne.attack, fighterOne.specialAttack, fighterTwo.defense, fighterTwo.specialDefense, eventLog, randomNumber);
             } else {
-                (fod, fosd, el, rn) = attack(fta, ftsa, fod, fosd, el, rn);
+                (fighterOne.defense, fighterOne.specialDefense, eventLog, randomNumber) = attack(fighterTwo.attack, fighterTwo.specialAttack, fighterOne.defense, fighterOne.specialDefense, eventLog, randomNumber);
             }
-            if (fod == 0 || ftd == 0)
+            if (fighterOne.defense == 0 || fighterTwo.defense == 0)
                 break;
             pom = !pom;
         }
 
-        return ((foa << 12) + (fod << 8) + (fosa << 4) + fosd, (fta << 12) + (ftd << 8) + (ftsa << 4) + ftsd, el);
+        return ((fighterOne.attack << 12) + (fighterOne.defense << 8) + (fighterOne.specialAttack << 4) + fighterOne.specialDefense, (fighterTwo.attack << 12) + (fighterTwo.defense << 8) + (fighterTwo.specialAttack << 4) + fighterTwo.specialDefense, eventLog);
     }
 
     function attack(uint32 _a, uint32 _sa, uint32 _d, uint32 _sd, uint128 _el, uint256 _r) internal view returns(uint32, uint32, uint128, uint256) {

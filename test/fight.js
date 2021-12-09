@@ -69,6 +69,8 @@ describe("Fight", function() {
         // 000010 000010 0111 1111 0111 1110 (Example)
         // const stats = await fight.fight(32639, 32638);
         // console.log(stats);
+        // 0111 1111 0111 1111
+        // 0111 1111 0111 1110
 
         const zeroPad = (num, places) => String(num).padStart(places, '0')
 
@@ -91,6 +93,10 @@ describe("Fight", function() {
         console.log("---------------------FIGHT---------------------");
         console.log("\n");
 
+        let isPlayerOne =   (parseInt(fighterOneStatsBin.substring(0, 4), 2) + parseInt(fighterOneStatsBin.substring(4, 8), 2) +
+                            parseInt(fighterOneStatsBin.substring(8, 12), 2) + parseInt(fighterOneStatsBin.substring(12, 16), 2)) <=
+                            (parseInt(fighterTwoStatsBin.substring(0, 4), 2) + parseInt(fighterTwoStatsBin.substring(4, 8), 2) +
+                            parseInt(fighterTwoStatsBin.substring(8, 12), 2) + parseInt(fighterTwoStatsBin.substring(12, 16), 2));
 
         [fighterOneStats, fighterTwoStats, eventLog] = await fight.fight(fighterOneStats, fighterTwoStats);
         fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 16);
@@ -99,11 +105,6 @@ describe("Fight", function() {
         eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
         eventLog = zeroPad(eventLog, eventLog.length + ((eventLog.length % 4) > 0 ? 4 - (eventLog.length % 4) : 0));
         
-        let isPlayerOne =   (parseInt(fighterOneStatsBin.substring(0, 4), 2) + parseInt(fighterOneStatsBin.substring(4, 8), 2) +
-                            parseInt(fighterOneStatsBin.substring(8, 12), 2) + parseInt(fighterOneStatsBin.substring(12, 16), 2)) <=
-                            (parseInt(fighterTwoStatsBin.substring(0, 4), 2) + parseInt(fighterTwoStatsBin.substring(4, 8), 2) +
-                            parseInt(fighterTwoStatsBin.substring(8, 12), 2) + parseInt(fighterTwoStatsBin.substring(12, 16), 2));
-
         for(let i = 0; i < eventLog.length; i+=4) {
             console.log(`${isPlayerOne ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i, i+4), 2)}`);
             isPlayerOne = !isPlayerOne;
