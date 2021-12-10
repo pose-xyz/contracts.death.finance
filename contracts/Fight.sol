@@ -6,25 +6,28 @@ contract Fight {
 
     address controller;
     bool[169] elementsMatrix;
-    uint constant BOUTS = 5;
+    uint constant BOUTS = 10;
 
     struct Fighter {
+        bool isTurn;
         uint32 specialElement;
         uint32 specialDefense;
         uint32 specialAttack;
         uint32 element;
         uint32 defense;
         uint32 attack;
-        bool isTurn;
     }
 
     struct Bout {
+        bool isCritical;
         uint32 attack;
         uint32 counter;
         uint32 attackerElement;
         uint32 defenderElement;
         uint32 attackerAttack;
         uint32 defenderAttack;
+        uint32 attackerDefense;
+        uint32 defenderDefense;
     }
 
     constructor (uint256 _elementsMatrix) {
@@ -68,9 +71,9 @@ contract Fight {
         for (uint b=0;b<BOUTS;b++) {
             eventLog = (eventLog << 1) + (fighterOne.isTurn ? 0 : 1);
             if (fighterOne.isTurn) {
-                (fighterOne, fighterTwo, eventLog, shouldSkip, randomNumber) = attack(fighterOne, fighterTwo, shouldSkip, eventLog, randomNumber);
+                (fighterOne, fighterTwo, eventLog, shouldSkip, randomNumber) = attack(fighterOne, fighterTwo, eventLog, randomNumber);
             } else {
-                (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, shouldSkip, eventLog, randomNumber);
+                (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber);
             }
             if (fighterOne.defense == 0 || fighterTwo.defense == 0)
                 break;
@@ -83,54 +86,47 @@ contract Fight {
         return ((fighterOne.attack << 20) + (fighterOne.defense << 16) + (fighterOne.element << 12) + (fighterOne.specialAttack << 8) + (fighterOne.specialDefense << 4) + fighterOne.specialElement, (fighterTwo.attack << 20) + (fighterTwo.defense << 16) + (fighterTwo.element << 12) + (fighterTwo.specialAttack << 8) + (fighterTwo.specialDefense << 4) + fighterTwo.specialElement, eventLog);
     }
 
-    function attack(Fighter memory _attacker, Fighter memory _defender, bool _shouldSkip, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, Fighter memory, uint128, bool, uint256) {
+    function attack(Fighter memory _attacker, Fighter memory _defender, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, Fighter memory, uint128, bool, uint256) {
         Bout memory bout;
         if (_defender.specialDefense > 0) {
             bout.attackerElement = _attacker.specialElement;
             bout.defenderElement = _defender.specialElement;
             bout.attackerAttack = _attacker.specialAttack;
             bout.defenderAttack = _defender.specialAttack;
-            (bout, _shouldSkip) = calculateAttackAndSkip(bout, _randomNumber);
-
-            if (bout.counter > bout.attack) {
-                if ((bout.counter - bout.attack) > _attacker.specialDefense)
-                    _attacker.specialDefense = 0;
-                else
-                    _attacker.specialDefense = _attacker.specialDefense - (bout.counter - bout.attack);
-            } else if (bout.counter < bout.attack) {
-                if (bout.attack > _defender.specialDefense)
-                    _defender.specialDefense = 0;
-                else
-                    _defender.specialDefense = _defender.specialDefense - bout.attack;
-            }
+            bout.attackerDefense = _attacker.specialDefense;
+            bout.defenderDefense = _defender.specialDefense;
         } else {
             bout.attackerElement = _attacker.element;
             bout.defenderElement = _defender.element;
             bout.attackerAttack = _attacker.attack;
             bout.defenderAttack = _defender.attack;
-            (bout, _shouldSkip) = calculateAttackAndSkip(bout, _randomNumber);
-            
-            if (bout.counter > bout.attack) {
-                if ((bout.counter - bout.attack) > _attacker.defense)
-                    _attacker.defense = 0;
-                else
-                    _attacker.defense = _attacker.defense - (bout.counter - bout.attack);
-            } else if (bout.counter < bout.attack) {
-                if (bout.attack > _defender.defense)
-                    _defender.defense = 0;
-                else
-                    _defender.defense = _defender.defense - bout.attack;
-            }
+            bout.attackerDefense = _attacker.defense;
+            bout.defenderDefense = _defender.defense;
         }
+        (bout) = evaluateBout(bout, _randomNumber);
+
+        if (bout.counter > bout.attack) {
+            if (_defender.specialDefense > 0)
+                _attacker.specialDefense = ((bout.counter - bout.attack) > bout.attackerDefense) ? 0 : bout.attackerDefense - (bout.counter - bout.attack);
+            else
+                _attacker.defense = ((bout.counter - bout.attack) > bout.attackerDefense) ? 0 : bout.attackerDefense - (bout.counter - bout.attack);
+        } else if (bout.counter < bout.attack) {
+            if (_defender.specialDefense > 0)
+                _defender.specialDefense = (bout.attack > bout.defenderDefense) ? 0 : bout.defenderDefense - bout.attack;
+            else
+                _defender.defense = (bout.attack > bout.defenderDefense) ? 0 : bout.defenderDefense - bout.attack;
+        }
+
         _eventLog = (_eventLog << 8) + (bout.attack << 4) + bout.counter;
-        return (_attacker, _defender, _eventLog, _shouldSkip, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))));
+        return (_attacker, _defender, _eventLog, bout.isCritical, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))));
     }
 
-    function calculateAttackAndSkip(Bout memory bout, uint256 _randomNumber) internal view returns(Bout memory, bool) {
+    function evaluateBout(Bout memory bout, uint256 _randomNumber) internal view returns(Bout memory) {
         bout.attack = uint32(_randomNumber % (elementIsStrong(bout.attackerElement, bout.defenderElement) ? (bout.attackerAttack * 2) + 1 : bout.attackerAttack + 1));
         bout.attack = bout.attack > 15 ? 15 : bout.attack;
+        bout.isCritical = elementIsStrong(bout.attackerElement, bout.defenderElement) ? bout.attack == (bout.attackerAttack * 2) : bout.attack == bout.attackerAttack;
         if (elementIsWeak(bout.attackerElement, bout.defenderElement))
             bout.counter = uint32(uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))) % bout.defenderAttack + 1);
-        return (bout, elementIsStrong(bout.attackerElement, bout.defenderElement) ? bout.attack == (bout.attackerAttack * 2) : bout.attack == bout.attackerAttack);
+        return (bout);
     }
 }

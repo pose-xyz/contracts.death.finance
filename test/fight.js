@@ -102,7 +102,6 @@ describe("Fight", function() {
         const EVENT_SIZE = 9;
         eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
         eventLog = zeroPad(eventLog, (eventLog.length - 1) + (((eventLog.length - 1) % EVENT_SIZE) > 0 ? EVENT_SIZE - ((eventLog.length - 1) % EVENT_SIZE) : 0));
-        console.log(eventLog);
         
         for(let i = 1; i < eventLog.length; i+=EVENT_SIZE) {
             console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
