@@ -52,19 +52,20 @@ contract Fight {
         fighterTwo.attack = (_fighterTwo >> 20) & 15;
         
         uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
-        uint128 eventLog;
-        bool isCritical;
+        uint128 eventLog = 1;
+        bool shouldSkip;
         fighterOne.isTurn = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
 
         for (uint b=0;b<BOUTS;b++) {
+            eventLog = (eventLog << 1) + (fighterOne.isTurn ? 0 : 1);
             if (fighterOne.isTurn) {
-                (fighterTwo, eventLog, isCritical, randomNumber) = attack(fighterOne, fighterTwo, isCritical, eventLog, randomNumber);
+                (fighterOne, fighterTwo, eventLog, shouldSkip, randomNumber) = attack(fighterOne, fighterTwo, shouldSkip, eventLog, randomNumber);
             } else {
-                (fighterOne, eventLog, isCritical, randomNumber) = attack(fighterTwo, fighterOne, isCritical, eventLog, randomNumber);
+                (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, shouldSkip, eventLog, randomNumber);
             }
             if (fighterOne.defense == 0 || fighterTwo.defense == 0)
                 break;
-            if (!isCritical) {
+            if (!shouldSkip) {
                 fighterOne.isTurn = !fighterOne.isTurn;
                 fighterTwo.isTurn = !fighterTwo.isTurn;
             }
@@ -73,24 +74,49 @@ contract Fight {
         return ((fighterOne.attack << 20) + (fighterOne.defense << 16) + (fighterOne.element << 12) + (fighterOne.specialAttack << 8) + (fighterOne.specialDefense << 4) + fighterOne.specialElement, (fighterTwo.attack << 20) + (fighterTwo.defense << 16) + (fighterTwo.element << 12) + (fighterTwo.specialAttack << 8) + (fighterTwo.specialDefense << 4) + fighterTwo.specialElement, eventLog);
     }
 
-    function attack(Fighter memory _attacker, Fighter memory _defender, bool _isCritical, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, uint128, bool, uint256) {
-        uint32 e;
+    function attack(Fighter memory _attacker, Fighter memory _defender, bool _shouldSkip, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, Fighter memory, uint128, bool, uint256) {
+        uint32 atk;
+        uint32 ctr;
         if (_defender.specialDefense > 0) {
-            e = uint32(_randomNumber % (elementIsStrong(_attacker.specialElement, _defender.specialElement) ? (_attacker.specialAttack * 2) + 1 : _attacker.specialAttack + 1));
-            _isCritical = elementIsStrong(_attacker.specialElement, _defender.specialElement) ? e == (_attacker.specialAttack * 2) : e == _attacker.specialAttack;
-            if (e > _defender.specialDefense)
-                _defender.specialDefense = 0;
-            else
-                _defender.specialDefense = _defender.specialDefense - e;
+            atk = uint32(_randomNumber % (elementIsStrong(_attacker.specialElement, _defender.specialElement) ? (_attacker.specialAttack * 2) + 1 : _attacker.specialAttack + 1));
+            atk = atk > 15 ? 15 : atk;
+            _shouldSkip = elementIsStrong(_attacker.specialElement, _defender.specialElement) ? atk == (_attacker.specialAttack * 2) : atk == _attacker.specialAttack;
+            if (elementIsWeak(_attacker.specialElement, _defender.specialElement)) {
+                _randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber)));
+                ctr = uint32(_randomNumber % _defender.specialAttack + 1);
+            }
+            if (ctr > atk) {
+                if ((ctr - atk) > _attacker.specialDefense)
+                    _attacker.specialDefense = 0;
+                else
+                    _attacker.specialDefense = _attacker.specialDefense - (ctr - atk);
+            } else if (ctr < atk) {
+                if (atk > _defender.specialDefense)
+                    _defender.specialDefense = 0;
+                else
+                    _defender.specialDefense = _defender.specialDefense - atk;
+            }
         } else {
-            e = uint32(_randomNumber % (elementIsStrong(_attacker.element, _defender.element) ? (_attacker.attack * 2) + 1 : _attacker.attack + 1));
-            _isCritical = elementIsStrong(_attacker.element, _defender.element) ? e == (_attacker.attack * 2) : e == _attacker.attack;
-            if (e > _defender.defense)
-                _defender.defense = 0;
-            else
-                _defender.defense = _defender.defense - e;
+            atk = uint32(_randomNumber % (elementIsStrong(_attacker.element, _defender.element) ? (_attacker.attack * 2) + 1 : _attacker.attack + 1));
+            atk = atk > 15 ? 15 : atk;
+            _shouldSkip = elementIsStrong(_attacker.element, _defender.element) ? atk == (_attacker.attack * 2) : atk == _attacker.attack;
+            if (elementIsWeak(_attacker.element, _defender.element)) {
+                _randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber)));
+                ctr = uint32(_randomNumber % _defender.attack + 1);
+            }
+            if (ctr > atk) {
+                if ((ctr - atk) > _attacker.defense)
+                    _attacker.defense = 0;
+                else
+                    _attacker.defense = _attacker.defense - (ctr - atk);
+            } else if (ctr < atk) {
+                if (atk > _defender.defense)
+                    _defender.defense = 0;
+                else
+                    _defender.defense = _defender.defense - atk;
+            }
         }
-        _eventLog = (_eventLog << 4) + e;
-        return (_defender, _eventLog, _isCritical, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))));
+        _eventLog = (_eventLog << 8) + (atk << 4) + ctr;
+        return (_attacker, _defender, _eventLog, _shouldSkip, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))));
     }
 }
