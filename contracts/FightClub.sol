@@ -2,7 +2,7 @@
 
 pragma solidity >= 0.8.0;
 
-contract Fight {
+contract FightClub {
 
     address controller;
     bool[169] elementsMatrix;
@@ -38,23 +38,15 @@ contract Fight {
         }
     }
 
-    function elementIsStrong(uint32 _elementOne, uint32 _elementTwo) public view returns (bool) {
+    function elementIsStrong(uint32 _elementOne, uint32 _elementTwo) internal view returns (bool) {
         return elementsMatrix[_elementTwo * 13 + _elementOne];
     }
 
-    function elementIsWeak(uint32 _elementOne, uint32 _elementTwo) public view returns (bool) {
+    function elementIsWeak(uint32 _elementOne, uint32 _elementTwo) internal view returns (bool) {
         return elementsMatrix[_elementOne * 13 + _elementTwo];
     }
 
-    function fight(uint32 _fighterOne, uint32 _fighterTwo) public view returns (uint32, uint32, uint128) {
-        Fighter memory fighterOne;
-        fighterOne.specialElement = _fighterOne & 15;
-        fighterOne.specialDefense = (_fighterOne >> 4) & 15;
-        fighterOne.specialAttack = (_fighterOne >> 8) & 15;
-        fighterOne.element = (_fighterOne >> 12) & 15;
-        fighterOne.defense = (_fighterOne >> 16) & 15;
-        fighterOne.attack = (_fighterOne >> 20) & 15;
-
+    function fight(uint32 _fighterOne, uint32 _fighterTwo) external view returns (uint32, uint32, uint128) {
         Fighter memory fighterTwo;
         fighterTwo.specialElement = _fighterTwo & 15;
         fighterTwo.specialDefense = (_fighterTwo >> 4) & 15;
@@ -62,11 +54,19 @@ contract Fight {
         fighterTwo.element = (_fighterTwo >> 12) & 15;
         fighterTwo.defense = (_fighterTwo >> 16) & 15;
         fighterTwo.attack = (_fighterTwo >> 20) & 15;
-        
-        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
-        uint128 eventLog = 1;
-        bool shouldSkip;
+
+        Fighter memory fighterOne;
+        fighterOne.specialElement = _fighterOne & 15;
+        fighterOne.specialDefense = (_fighterOne >> 4) & 15;
+        fighterOne.specialAttack = (_fighterOne >> 8) & 15;
+        fighterOne.element = (_fighterOne >> 12) & 15;
+        fighterOne.defense = (_fighterOne >> 16) & 15;
+        fighterOne.attack = (_fighterOne >> 20) & 15;
         fighterOne.isTurn = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
+        
+        bool shouldSkip;
+        uint128 eventLog = 1;
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, block.number, block.difficulty)));
 
         for (uint b=0;b<BOUTS;b++) {
             eventLog = (eventLog << 1) + (fighterOne.isTurn ? 0 : 1);
