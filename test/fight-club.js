@@ -11,12 +11,13 @@ describe("Fight", function() {
         accounts = await ethers.getSigners();
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+            fightClub = await FightClub.attach("0xD03D6cF8920c5fe830476dFa3A738B055b30dE81");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+            fightClub = await FightClub.attach("0xD03D6cF8920c5fe830476dFa3A738B055b30dE81");
         else
             fightClub = await FightClub.deploy("193660831688735064581587655956512620320321525841920");
     });
+    
     it("Fight", async function() {
 
         const zeroPad = (num, places) => String(num).padStart(places, '0')
@@ -49,11 +50,13 @@ describe("Fight", function() {
 
         const EVENT_SIZE = 9;
         eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
-        eventLog = zeroPad(eventLog, (eventLog.length - 1) + (((eventLog.length - 1) % EVENT_SIZE) > 0 ? EVENT_SIZE - ((eventLog.length - 1) % EVENT_SIZE) : 0));
+        const isTie = (eventLog.length % EVENT_SIZE) == 1;
+        // eventLog = zeroPad(eventLog, (eventLog.length - 1) + (((eventLog.length - 1) % EVENT_SIZE) > 0 ? EVENT_SIZE - ((eventLog.length - 1) % EVENT_SIZE) : 0));
         
-        for(let i = 1; i < eventLog.length; i+=EVENT_SIZE) {
+        for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
             console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
         }
+        console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
 
         console.log("\n");
         console.log("------------------PLAYER ONE------------------")

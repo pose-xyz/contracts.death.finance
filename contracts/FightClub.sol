@@ -75,8 +75,10 @@ contract FightClub {
             } else {
                 (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber);
             }
-            if (fighterOne.defense == 0 || fighterTwo.defense == 0)
+            if (fighterOne.defense == 0 || fighterTwo.defense == 0) {
+                eventLog = (eventLog << 1) + (fighterTwo.defense == 0 ? 0 : 1);
                 break;
+            }
             if (!shouldSkip) {
                 fighterOne.isTurn = !fighterOne.isTurn;
                 fighterTwo.isTurn = !fighterTwo.isTurn;
