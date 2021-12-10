@@ -87,23 +87,7 @@ contract Fight {
     }
 
     function attack(Fighter memory _attacker, Fighter memory _defender, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, Fighter memory, uint128, bool, uint256) {
-        Bout memory bout;
-        if (_defender.specialDefense > 0) {
-            bout.attackerElement = _attacker.specialElement;
-            bout.defenderElement = _defender.specialElement;
-            bout.attackerAttack = _attacker.specialAttack;
-            bout.defenderAttack = _defender.specialAttack;
-            bout.attackerDefense = _attacker.specialDefense;
-            bout.defenderDefense = _defender.specialDefense;
-        } else {
-            bout.attackerElement = _attacker.element;
-            bout.defenderElement = _defender.element;
-            bout.attackerAttack = _attacker.attack;
-            bout.defenderAttack = _defender.attack;
-            bout.attackerDefense = _attacker.defense;
-            bout.defenderDefense = _defender.defense;
-        }
-        (bout) = evaluateBout(bout, _randomNumber);
+        Bout memory bout = createBout(_attacker, _defender, _randomNumber);
 
         if (bout.counter > bout.attack) {
             if (_defender.specialDefense > 0)
@@ -121,12 +105,28 @@ contract Fight {
         return (_attacker, _defender, _eventLog, bout.isCritical, uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))));
     }
 
-    function evaluateBout(Bout memory bout, uint256 _randomNumber) internal view returns(Bout memory) {
+    function createBout(Fighter memory _attacker, Fighter memory _defender, uint256 _randomNumber) internal view returns(Bout memory) {
+        Bout memory bout;
+        if (_defender.specialDefense > 0) {
+            bout.attackerElement = _attacker.specialElement;
+            bout.defenderElement = _defender.specialElement;
+            bout.attackerAttack = _attacker.specialAttack;
+            bout.defenderAttack = _defender.specialAttack;
+            bout.attackerDefense = _attacker.specialDefense;
+            bout.defenderDefense = _defender.specialDefense;
+        } else {
+            bout.attackerElement = _attacker.element;
+            bout.defenderElement = _defender.element;
+            bout.attackerAttack = _attacker.attack;
+            bout.defenderAttack = _defender.attack;
+            bout.attackerDefense = _attacker.defense;
+            bout.defenderDefense = _defender.defense;
+        }
         bout.attack = uint32(_randomNumber % (elementIsStrong(bout.attackerElement, bout.defenderElement) ? (bout.attackerAttack * 2) + 1 : bout.attackerAttack + 1));
         bout.attack = bout.attack > 15 ? 15 : bout.attack;
         bout.isCritical = elementIsStrong(bout.attackerElement, bout.defenderElement) ? bout.attack == (bout.attackerAttack * 2) : bout.attack == bout.attackerAttack;
         if (elementIsWeak(bout.attackerElement, bout.defenderElement))
             bout.counter = uint32(uint256(keccak256(abi.encodePacked(block.timestamp, block.number, _randomNumber))) % bout.defenderAttack + 1);
-        return (bout);
+        return bout;
     }
 }
