@@ -44,37 +44,16 @@ describe("Fight", function() {
         console.log("\n");
         console.log("---------------------FIGHT---------------------");
 
-        [fighterOneStats, fighterTwoStats, eventLog] = await fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats);
-        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
-        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
+        eventLog = await fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats);
 
         const EVENT_SIZE = 9;
         eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
         const isTie = (eventLog.length % EVENT_SIZE) == 1;
-        // eventLog = zeroPad(eventLog, (eventLog.length - 1) + (((eventLog.length - 1) % EVENT_SIZE) > 0 ? EVENT_SIZE - ((eventLog.length - 1) % EVENT_SIZE) : 0));
         
         for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
             console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
         }
         console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
-
-        console.log("\n");
-        console.log("------------------PLAYER ONE------------------")
-        console.log("Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
-        console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
-        console.log("Element: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
-        console.log("Special Attack: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
-        console.log("Special Defense: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
-        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
-        console.log("\n");
-        console.log("------------------PLAYER TWO------------------")
-        console.log("Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
-        console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
-        console.log("Element: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-        console.log("Special Attack: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
-        console.log("Special Defense: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
-        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
-        console.log("\n");
     });
 });
 
