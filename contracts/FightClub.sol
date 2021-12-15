@@ -11,7 +11,7 @@ contract FightClub {
     address controller;
     uint constant BOUTS = 10;
     uint elementsMatrix;
-    uint random;
+    uint public random;
 
     struct Fighter {
         bool isTurn;
@@ -38,12 +38,13 @@ contract FightClub {
     constructor (uint _elementsMatrix) {
         controller = msg.sender;
         elementsMatrix = _elementsMatrix;
-        random = 0;
+        random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
     }
 
-    function setRandom(uint _random) external {
-        require(block.number % 10 == 0, 'Blocknum not divisible by 10');
-        random = _random;
+    function addRandomness(uint128 _random) external {
+        require(block.number % 5 == 0, 'Blocknum not divisible by 5');
+        require(_random > 1, 'Multiplier less than 2');
+        random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
 
     function elementIsStrong(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
@@ -55,7 +56,8 @@ contract FightClub {
     }
 
     function fight(uint32 _fighterOne, uint32 _fighterTwo) external view returns (uint128) {
-        require(block.number % 10 != 0, 'Blocknum not divisible by 10');
+        require(msg.sender == controller, 'Must be called by controller');
+        require(block.number % 5 != 0, 'Blocknum divisible by 5');
 
         Fighter memory fighterTwo;
         fighterTwo.specialElement = uint8(_fighterTwo & 15);
@@ -76,7 +78,7 @@ contract FightClub {
         
         bool shouldSkip;
         uint128 eventLog = 1;
-        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, random)));
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.number, random)));
 
         for (uint b=0;b<BOUTS;b++) {
             eventLog = (eventLog << 1) + (fighterOne.isTurn ? 0 : 1);

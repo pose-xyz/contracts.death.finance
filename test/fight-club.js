@@ -44,8 +44,39 @@ describe("Fight", function() {
         console.log("\n");
         console.log("---------------------FIGHT---------------------");
 
-        eventLog = await fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats);
+        await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
+            "Blocknum not divisible by 5"
+        );
 
+        await mineUntil(4);
+
+        await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
+            "Multiplier less than 2"
+        );
+
+        await mineUntil(9);
+
+        await expect(fightClub.connect(accounts[1]).addRandomness(1)).to.be.revertedWith(
+            "Multiplier less than 2"
+        );
+
+        await mineUntil(14);
+
+        await fightClub.connect(accounts[1]).addRandomness(2423432);
+
+        await expect(fightClub.connect(accounts[1]).fight(fighterOneStats, fighterTwoStats)).to.be.revertedWith(
+            "Must be called by controller"
+        );
+
+        await mineUntil(20);
+
+        await expect(fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats)).to.be.revertedWith(
+            "Blocknum divisible by 5"
+        );
+
+        await mineUntil(21);
+
+        eventLog = await fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats);
         const EVENT_SIZE = 9;
         eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
         const isTie = (eventLog.length % EVENT_SIZE) == 1;
@@ -57,6 +88,13 @@ describe("Fight", function() {
     });
 });
 
+const mineUntil = async function (blockNum) {
+    let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+    while (currentBlock.number % blockNum != 0) {
+        await ethers.provider.send('evm_mine');
+        currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+    }
+}
 
 // Notes
 
