@@ -11,6 +11,14 @@ contract FightClub {
     uint constant BOUTS = 10;
     uint elementsMatrix;
     uint public random;
+    mapping(uint => BracketStatus) roundBracketStatus;
+
+    struct BracketStatus {
+        uint fighterTrancheOne;
+        uint fighterTrancheTwo;
+        uint fighterTrancheThree;
+        uint fighterTrancheFour;
+    }
 
     struct Fighter {
         bool isTurn;
@@ -46,12 +54,13 @@ contract FightClub {
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
 
-    function elementIsStrong(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
-        return (elementsMatrix >> (_elementTwo * 13 + _elementOne)) & 1 > 0;
-    }
-
-    function elementIsWeak(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
-        return (elementsMatrix >> (_elementOne * 13 + _elementTwo)) & 1 > 0;
+    function setBracketStatus(uint _round, uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
+        require(msg.sender == controller, 'Must be called by controller');
+        BracketStatus storage bracketStatus = roundBracketStatus[_round];
+        bracketStatus.fighterTrancheOne = _fighterTrancheOne;
+        bracketStatus.fighterTrancheTwo = _fighterTrancheTwo;
+        bracketStatus.fighterTrancheThree = _fighterTrancheThree;
+        bracketStatus.fighterTrancheFour = _fighterTrancheFour;
     }
 
     function fight(uint32 _fighterOne, uint32 _fighterTwo) external view returns (uint128) {
@@ -144,5 +153,13 @@ contract FightClub {
         if (elementIsWeak(bout.attackerElement, bout.defenderElement))
             bout.counter = uint8(uint256(keccak256(abi.encodePacked(random, _randomNumber))) % bout.defenderAttack + 1);
         return bout;
+    }
+
+    function elementIsStrong(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
+        return (elementsMatrix >> (_elementTwo * 13 + _elementOne)) & 1 > 0;
+    }
+
+    function elementIsWeak(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
+        return (elementsMatrix >> (_elementOne * 13 + _elementTwo)) & 1 > 0;
     }
 }
