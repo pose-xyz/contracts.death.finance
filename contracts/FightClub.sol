@@ -6,7 +6,6 @@ contract FightClub {
 
     // TODO: Figure out bracket betting
     // TODO: Figure out fighter registration
-    // TODO: Add tie-breaker logic
 
     address controller;
     uint constant BOUTS = 10;
@@ -94,6 +93,9 @@ contract FightClub {
             if (!shouldSkip) {
                 fighterOne.isTurn = !fighterOne.isTurn;
                 fighterTwo.isTurn = !fighterTwo.isTurn;
+            }
+            if (b == 9) {
+                eventLog = (eventLog << 1) + ((uint256(keccak256(abi.encodePacked(random, randomNumber))) % 2) == 0 ? 0 : 1);
             }
         }
 
