@@ -14,6 +14,10 @@ When I say "bracket state transition", I mean the process of going from 1024 fig
 - Round 1: 0 1 1 0 (fighters 1, 2 are fighting in this round)
 - Round 2: 0 0 1 0 (fighter 2 is fighting in this round)
 
+And here is a basic diagram of what I just mentioned, below:
+
+![image info](./assets/diagram.png)
+
 Before we begin each "round", users will be able to place bets on fighters that they believe will win the bracket. The payout / mechanics for this are a work in progress. After each round begins, betting will cease and fights will begin. 
 Given that the blockchain is deterministic and individuals can predict the outcome of individual fights, we provide a randomness variable that is used to determine the outcome of fights which can be altered by anyone. This is our version of "publicly-sourced randomness". The smart contract(s) we are deploying also provide a free method for verifying that each fight occurred at the exact block which we said it would occur at and consumed the current randomness variable at that block - this function is free-of-charge for anyone to execute. 
 
