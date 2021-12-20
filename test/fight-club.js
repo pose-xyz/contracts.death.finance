@@ -86,6 +86,17 @@ describe("Fight", function() {
         }
         console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
     });
+    
+    it("place bet", async function() {
+        let overrides = {
+            value: ethers.utils.parseEther("1.0")     
+        }
+        const _fighterID = 24
+        await fightClub.connect(accounts[1]).placeBet((_fighterID, 1000), overrides);
+
+        const amount = await fightClub.connect(accounts[1]).getBetAmountForFighter(_fighterID)
+        expect(amount == ethers.utils.parseEther("1.0"), "bet amount does not match");
+    });
 });
 
 const mineUntil = async function (blockNum) {

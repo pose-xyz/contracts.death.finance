@@ -12,7 +12,16 @@ contract FightClub {
     uint elementsMatrix;
     uint public random;
     mapping(uint => BracketStatus) roundBracketStatus;
+    // key: fighter identifier, value: bets on fighters
+    mapping(address => Bet[]) fighterBets;
 
+    struct Bet {
+        uint16 fighterIdentifier;
+        // Bet is given in wei.
+        uint betAmount;
+    }
+
+    // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 figher groups.
     struct BracketStatus {
         uint fighterTrancheOne;
         uint fighterTrancheTwo;
@@ -47,6 +56,25 @@ contract FightClub {
         elementsMatrix = _elementsMatrix;
         random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
     }
+    
+    function placeBet(uint16 _fighterIdentifier) external payable {
+        require(msg.value > 0, 'Must place a bet higher than zero');
+        require(_fighterIdentifier > 0, 'Invalid fighter identifier, too low');
+        require(_fighterIdentifier < 1024, 'Invalid fighter identifier, too high');
+        // TODO: Don't allow bet is the fighter's round has already started, or if fighter has already fought.
+        fighterBets[msg.sender].push(Bet(_fighterIdentifier, msg.value));
+    }
+
+    function getBetAmountForFighter(uint16 _fighterIdentifier) external view returns (uint) {
+        Bet[] storage allBets = fighterBets[msg.sender];
+        uint betTotal = 0;
+        for (uint i=0;i<allBets.length;i++) {
+            if (allBets[i].fighterIdentifier == _fighterIdentifier) {
+                betTotal += allBets[i].betAmount;
+            }
+        }
+        return betTotal;
+    }
 
     function addRandomness(uint128 _random) external {
         require(block.number % 5 == 0, 'Blocknum not divisible by 5');
@@ -54,6 +82,7 @@ contract FightClub {
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
 
+    // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 member groups.
     function setBracketStatus(uint _round, uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
         require(msg.sender == controller, 'Must be called by controller');
         BracketStatus storage bracketStatus = roundBracketStatus[_round];
