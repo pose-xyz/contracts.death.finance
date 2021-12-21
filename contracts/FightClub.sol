@@ -13,15 +13,15 @@ contract FightClub {
     uint public random;
     mapping(uint => BracketStatus) roundBracketStatus;
     // key: fighter identifier, value: bets on fighters
-    mapping(address => Bet[]) fighterBets;
+    mapping(address => Bet) bets;
 
     struct Bet {
         uint16 fighterIdentifier;
         // Bet is given in wei.
-        uint betAmount;
+        uint80 amount;
     }
 
-    // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 figher groups.
+    // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 fighter groups.
     struct BracketStatus {
         uint fighterTrancheOne;
         uint fighterTrancheTwo;
@@ -59,21 +59,14 @@ contract FightClub {
     
     function placeBet(uint16 _fighterIdentifier) external payable {
         require(msg.value > 0, 'Must place a bet higher than zero');
-        require(_fighterIdentifier > 0, 'Invalid fighter identifier, too low');
-        require(_fighterIdentifier < 1024, 'Invalid fighter identifier, too high');
+        require(_fighterIdentifier < 65535, 'Invalid fighter identifier, too high');
         // TODO: Don't allow bet is the fighter's round has already started, or if fighter has already fought.
-        fighterBets[msg.sender].push(Bet(_fighterIdentifier, msg.value));
+        bets[msg.sender] = Bet(_fighterIdentifier, uint80(msg.value));
     }
 
-    function getBetAmountForFighter(uint16 _fighterIdentifier) external view returns (uint) {
-        Bet[] storage allBets = fighterBets[msg.sender];
-        uint betTotal = 0;
-        for (uint i=0;i<allBets.length;i++) {
-            if (allBets[i].fighterIdentifier == _fighterIdentifier) {
-                betTotal += allBets[i].betAmount;
-            }
-        }
-        return betTotal;
+    function getBet() external view returns (uint16, uint) {
+        Bet storage bet = bets[msg.sender];
+        return (bet.fighterIdentifier, bet.amount);
     }
 
     function addRandomness(uint128 _random) external {

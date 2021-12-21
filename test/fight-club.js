@@ -94,7 +94,8 @@ describe("Fight", function() {
         const _fighterID = 24
         await fightClub.connect(accounts[1]).placeBet((_fighterID, 1000), overrides);
 
-        const amount = await fightClub.connect(accounts[1]).getBetAmountForFighter(_fighterID)
+        // getBet returns (fighter identifier, bet amount)
+        const amount = await fightClub.connect(accounts[1]).getBet()[1]
         expect(amount == ethers.utils.parseEther("1.0"), "bet amount does not match");
     });
 });
