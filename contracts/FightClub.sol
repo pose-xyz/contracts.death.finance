@@ -14,7 +14,7 @@ contract FightClub {
 
     mapping(address => FighterBet) bets;
     // key: fighter identifier, value: bets on fighters
-    mapping(uint16 => FighterBet) fighterTotalPot;
+    mapping(uint16 => FighterBet) fighterTotalPots;
 
     Config public config;
 
@@ -26,10 +26,10 @@ contract FightClub {
     }
 
     struct FighterBet {
+        uint8 lastRoundUpdated;
         uint16 fighterIdentifier;
         uint80 amount;
         uint80 equityOfAmount;
-        uint8 lastRoundUpdated;
     }
 
     // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 fighter groups.
@@ -68,42 +68,69 @@ contract FightClub {
         random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
     }
 
-    function setConfig(bool bettingIsOpen, uint8 currentRound) public {
+    function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
         require(msg.sender == controller, 'Must be called by controller');
-        config.bettingIsOpen = bettingIsOpen;
-        config.currentRound = currentRound;
+        config.bettingIsOpen = _bettingIsOpen;
+        config.currentRound = _currentRound;
     }
 
-    function fighterIsAlive(uint16 _fighterIdentifier) pure public returns (bool) {
-        // TODO: Need examples of how tranches will be defined.
-        return true;
+    function fighterEliminated(uint16 _fighterIdentifier) view internal returns (bool) {
+        BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
+        uint trancheNum = _fighterIdentifier / 256;
+        uint fighterNum = _fighterIdentifier % 256;
+
+        uint tranche = 0;
+        if (trancheNum == 0) {
+            tranche = bracketStatus.fighterTrancheOne;
+        } else if (trancheNum == 1) {
+            tranche = bracketStatus.fighterTrancheTwo;
+        } else if (trancheNum == 1) {
+            tranche = bracketStatus.fighterTrancheThree;
+        } else {
+            tranche = bracketStatus.fighterTrancheFour;
+        }
+
+        return ((tranche >> fighterNum) & 1) == 1;
     }
     
     function placeBet(uint16 _fighterIdentifier) external payable {
         require(msg.value > 0, 'Must place a bet higher than zero');
-        require(_fighterIdentifier < 65535, 'Invalid fighter identifier, too high');
         require(config.bettingIsOpen, 'Betting is not open; we are mid-round');
-        require(fighterIsAlive(_fighterIdentifier), 'Fighter is dead');
-
+        require(!fighterEliminated(_fighterIdentifier), 'Fighter is dead');
+        
         FighterBet storage existingBet = bets[msg.sender];
         uint80 newBetAmount = uint80(msg.value);
-
+        // TODO: Do we allow them to bet on a new fighter if their current fighter is not eliminated?
         bool bettingOnNewFighter = existingBet.fighterIdentifier != _fighterIdentifier;
         bool isNewBettor = existingBet.amount == 0;
         if (bettingOnNewFighter || isNewBettor) {
-            bets[msg.sender] = FighterBet(_fighterIdentifier, newBetAmount, newBetAmount, config.currentRound);
-            return;
+            bets[msg.sender] = FighterBet(config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+        } else {
+            // Is adding another bet to their fighter.
+            uint8 roundDifference = config.currentRound - existingBet.lastRoundUpdated;
+
+            // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
+            existingBet.equityOfAmount *= uint80(2**roundDifference);
+            existingBet.equityOfAmount += newBetAmount;
+
+            existingBet.amount += newBetAmount;
+            existingBet.lastRoundUpdated = config.currentRound;
         }
 
-        // Is adding another bet to their fighter.
-        uint8 roundDifference = config.currentRound - existingBet.lastRoundUpdated;
+        // Update total pot for fighter
+        FighterBet storage fighterTotalPot = fighterTotalPots[_fighterIdentifier];
+        if (fighterTotalPot.amount == 0) {
+            fighterTotalPots[_fighterIdentifier] = FighterBet(config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+        } else {
+            uint8 roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
+            fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
+            fighterTotalPot.equityOfAmount += newBetAmount;
+            fighterTotalPot.amount += newBetAmount;
+            fighterTotalPot.lastRoundUpdated = config.currentRound;
+        }
 
-        // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
-        existingBet.equityOfAmount *= uint80(2**roundDifference);
-        existingBet.equityOfAmount += newBetAmount;
-
-        existingBet.amount += newBetAmount;
-        existingBet.lastRoundUpdated = config.currentRound;
+        // Update total pot
+        config.pot += newBetAmount;
     }
 
     function getBet() external view returns (uint16, uint80, uint80, uint8) {
