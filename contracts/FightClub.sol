@@ -90,17 +90,18 @@ contract FightClub {
             tranche = bracketStatus.fighterTrancheFour;
         }
 
-        return ((tranche >> fighterNum) & 1) == 1;
+        return ((tranche >> fighterNum) & 1) == 0;
     }
     
     function placeBet(uint16 _fighterIdentifier) external payable {
         require(msg.value > 0, 'Must place a bet higher than zero');
         require(config.bettingIsOpen, 'Betting is not open; we are mid-round');
-        require(!fighterEliminated(_fighterIdentifier), 'Fighter is dead');
+        require(config.currentRound == 0 || !fighterEliminated(_fighterIdentifier), 'Fighter is eliminated');
         
         FighterBet storage existingBet = bets[msg.sender];
+        // Don't allow them to change fighter if their fighter hasn't been eliminated
+        require(existingBet.amount == 0 || fighterEliminated(existingBet.fighterIdentifier), 'Present fighter not eliminated');
         uint80 newBetAmount = uint80(msg.value);
-        // TODO: Do we allow them to bet on a new fighter if their current fighter is not eliminated?
         bool bettingOnNewFighter = existingBet.fighterIdentifier != _fighterIdentifier;
         bool isNewBettor = existingBet.amount == 0;
         if (bettingOnNewFighter || isNewBettor) {
