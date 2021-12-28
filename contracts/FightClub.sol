@@ -4,7 +4,6 @@ pragma solidity >= 0.8.0;
 
 contract FightClub {
 
-    // TODO: Figure out bracket betting
     // TODO: Figure out fighter registration
 
     address controller;
@@ -13,6 +12,27 @@ contract FightClub {
     uint public random;
     mapping(uint => BracketStatus) roundBracketStatus;
 
+    mapping(address => FighterBet) bets;
+    // key: fighter identifier, value: bets on fighters
+    mapping(uint16 => FighterBet) fighterTotalPots;
+
+    Config public config;
+
+    struct Config {
+        // Betting is open before a round has begun and after the round has completed.
+        bool bettingIsOpen;
+        uint8 currentRound;
+        uint pot;
+    }
+
+    struct FighterBet {
+        uint8 lastRoundUpdated;
+        uint16 fighterIdentifier;
+        uint80 amount;
+        uint80 equityOfAmount;
+    }
+
+    // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 fighter groups.
     struct BracketStatus {
         uint fighterTrancheOne;
         uint fighterTrancheTwo;
@@ -48,13 +68,81 @@ contract FightClub {
         random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
     }
 
+    function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
+        require(msg.sender == controller, 'Must be called by controller');
+        config.bettingIsOpen = _bettingIsOpen;
+        config.currentRound = _currentRound;
+    }
+
+    function fighterEliminated(uint16 _fighterIdentifier) view internal returns (bool) {
+        BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
+        uint trancheNum = _fighterIdentifier / 256;
+        uint fighterNum = _fighterIdentifier % 256;
+
+        uint tranche = 0;
+        if (trancheNum == 0) {
+            tranche = bracketStatus.fighterTrancheOne;
+        } else if (trancheNum == 1) {
+            tranche = bracketStatus.fighterTrancheTwo;
+        } else if (trancheNum == 2) {
+            tranche = bracketStatus.fighterTrancheThree;
+        } else {
+            tranche = bracketStatus.fighterTrancheFour;
+        }
+
+        return ((tranche >> fighterNum) & 1) == 1;
+    }
+    
+    function placeBet(uint16 _fighterIdentifier) external payable {
+        require(msg.value > 0, 'Must place a bet higher than zero');
+        require(config.bettingIsOpen, 'Betting is not open; we are mid-round');
+        require(!fighterEliminated(_fighterIdentifier), 'Fighter is dead');
+ 
+        FighterBet storage existingBet = bets[msg.sender];
+        uint80 newBetAmount = uint80(msg.value);
+        // TODO: Do we allow them to bet on a new fighter if their current fighter is not eliminated?
+        bool bettingOnNewFighter = existingBet.fighterIdentifier != _fighterIdentifier;
+        bool isNewBettor = existingBet.amount == 0;
+        if (bettingOnNewFighter || isNewBettor) {
+            bets[msg.sender] = FighterBet(config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+        } else {
+            setNewBetProperties(existingBet, newBetAmount);
+        }
+
+        // Update total pot for fighter
+        FighterBet storage fighterTotalPot = fighterTotalPots[_fighterIdentifier];
+        if (fighterTotalPot.amount == 0) {
+            fighterTotalPots[_fighterIdentifier] = FighterBet(config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+        } else {
+            setNewBetProperties(fighterTotalPot, newBetAmount);
+        }
+
+        // Update total pot
+        config.pot += newBetAmount;
+    }
+
+    function setNewBetProperties(FighterBet storage _bet, uint80 newBetAmount) internal {
+            uint8 roundDifference = config.currentRound - _bet.lastRoundUpdated;
+            // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
+            _bet.equityOfAmount *= uint80(2**roundDifference);
+            _bet.equityOfAmount += newBetAmount;
+            _bet.amount += newBetAmount;
+            _bet.lastRoundUpdated = config.currentRound;
+    }
+
+    function getBet() external view returns (uint16, uint80, uint80, uint8) {
+        FighterBet storage bet = bets[msg.sender];
+        return (bet.fighterIdentifier, bet.amount, bet.equityOfAmount, bet.lastRoundUpdated);
+    }
+
     function addRandomness(uint128 _random) external {
         require(block.number % 5 == 0, 'Blocknum not divisible by 5');
         require(_random > 1, 'Multiplier less than 2');
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
 
-    function setBracketStatus(uint _round, uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
+    // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 member groups.
+    function setBracketStatus(uint8 _round, uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
         require(msg.sender == controller, 'Must be called by controller');
         BracketStatus storage bracketStatus = roundBracketStatus[_round];
         bracketStatus.fighterTrancheOne = _fighterTrancheOne;

@@ -86,6 +86,68 @@ describe("Fight", function() {
         }
         console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
     });
+
+    // TODO: "fail bet if fighter died"
+
+    it("fail bet if betting is closed", async function() {
+        const _fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(false, 0)
+        await expect(fightClub.connect(accounts[1]).placeBet(_fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        })).to.be.revertedWith('Betting is not open; we are mid-round');
+    });
+ 
+    it("successfully place bet", async function() {
+        const _fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0)
+        await fightClub.connect(accounts[1]).placeBet((_fighterID),{
+            value: ethers.utils.parseEther("1.0")
+        });
+
+        const amount = await fightClub.connect(accounts[1]).getBet();
+        await expect(amount[1]).to.equal(ethers.utils.parseEther("1.0"));
+    });
+
+    it("place two successful bets on same fighter, same round", async function() {
+        const _fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0);
+
+        await fightClub.connect(accounts[1]).placeBet(_fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        });
+        await fightClub.connect(accounts[1]).placeBet(_fighterID, {
+            value: ethers.utils.parseEther("1.5")
+        });
+
+        const afterTwoBets = await fightClub.connect(accounts[1]).getBet();
+        await expect(afterTwoBets[1]).to.equal(ethers.utils.parseEther("2.5"));
+    });
+
+    it("place two successful bets on same fighter, different rounds", async function() {
+        const _fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0);
+
+        await fightClub.connect(accounts[1]).placeBet(_fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        });
+        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const firstRoundBetAmount = firstRoundBet[1];
+        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+        const firstRoundBetEquity = firstRoundBet[2];
+        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
+
+        await fightClub.connect(accounts[0]).setConfig(true, 1);
+
+        await fightClub.connect(accounts[1]).placeBet(_fighterID, {
+            value: ethers.utils.parseEther("1.5")
+        });
+        const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const secondRoundBetAmount = secondRoundBet[1];
+        await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
+
+        const secondRoundBetEquity = secondRoundBet[2];
+        await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("3.5"));
+    });
 });
 
 const mineUntil = async function (blockNum) {
