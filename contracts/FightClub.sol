@@ -111,7 +111,7 @@ contract FightClub {
             tranche = bracketStatus.fighterTrancheOne;
         } else if (trancheNum == 1) {
             tranche = bracketStatus.fighterTrancheTwo;
-        } else if (trancheNum == 1) {
+        } else if (trancheNum == 2) {
             tranche = bracketStatus.fighterTrancheThree;
         } else {
             tranche = bracketStatus.fighterTrancheFour;
@@ -195,15 +195,7 @@ contract FightClub {
         if (bettingOnNewFighter || !hasExistingBet) {
             bets[msg.sender] = FighterBet(false, config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
         } else {
-            // Is adding another bet to their fighter.
-            uint8 roundDifference = config.currentRound - existingBet.lastRoundUpdated;
-
-            // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
-            existingBet.equityOfAmount *= uint80(2**roundDifference);
-            existingBet.equityOfAmount += newBetAmount;
-
-            existingBet.amount += newBetAmount;
-            existingBet.lastRoundUpdated = config.currentRound;
+            setNewBetProperties(existingBet, newBetAmount);
         }
 
         // Update total pot for fighter
@@ -211,16 +203,21 @@ contract FightClub {
         if (fighterTotalPot.amount == 0) {
             fighterTotalPots[_fighterIdentifier] = FighterBet(false, config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
         } else {
-            uint8 roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
-            fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
-            fighterTotalPot.equityOfAmount += newBetAmount;
-            fighterTotalPot.amount += newBetAmount;
-            fighterTotalPot.lastRoundUpdated = config.currentRound;
+            setNewBetProperties(fighterTotalPot, newBetAmount);
         }
 
         // Update total pot
         bettorTotalContributions[msg.sender] += newBetAmount;
         config.pot += newBetAmount;
+    }
+
+    function setNewBetProperties(FighterBet storage _bet, uint80 newBetAmount) internal {
+            uint8 roundDifference = config.currentRound - _bet.lastRoundUpdated;
+            // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
+            _bet.equityOfAmount *= uint80(2**roundDifference);
+            _bet.equityOfAmount += newBetAmount;
+            _bet.amount += newBetAmount;
+            _bet.lastRoundUpdated = config.currentRound;
     }
 
     function getBet() external view returns (uint16, uint80, uint80, uint8) {
