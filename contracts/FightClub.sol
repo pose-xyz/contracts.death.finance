@@ -6,17 +6,17 @@ contract FightClub {
 
     // TODO: Figure out fighter registration
 
-    address controller;
+    address internal controller;
     uint constant BOUTS = 10;
-    uint elementsMatrix;
-    uint public random;
-    mapping(uint => BracketStatus) roundBracketStatus;
+    uint internal elementsMatrix;
+    uint internal random;
+    mapping(uint => BracketStatus) internal roundBracketStatus;
 
-    mapping(address => FighterBet) bets;
+    mapping(address => FighterBet) internal bets;
     // key: fighter identifier, value: bets on fighters
-    mapping(uint16 => FighterBet) fighterTotalPots;
+    mapping(uint16 => FighterBet) internal fighterTotalPots;
 
-    Config public config;
+    Config internal config;
 
     struct Config {
         // Betting is open before a round has begun and after the round has completed.
