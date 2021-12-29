@@ -23,6 +23,7 @@ contract FightClub {
         // Betting is open before a round has begun and after the round has completed.
         bool bettingIsOpen;
         uint8 currentRound;
+        uint24 winningFighterIdentifier;
         uint pot;
     }
 
@@ -67,6 +68,7 @@ contract FightClub {
         controller = msg.sender;
         elementsMatrix = _elementsMatrix;
         random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
+        config.winningFighterIdentifier = 16777215;
     }
 
     function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
@@ -74,6 +76,10 @@ contract FightClub {
         require(_currentRound >= config.currentRound, 'Requires greater current round');
         config.bettingIsOpen = _bettingIsOpen;
         config.currentRound = _currentRound;
+    }
+
+    function getConfig() view external returns (bool, uint8, uint24, uint) {
+        return (config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.pot);
     }
 
     function fighterEliminated(uint16 _fighterIdentifier) view internal returns (bool) {
@@ -93,6 +99,50 @@ contract FightClub {
         }
 
         return ((tranche >> fighterNum) & 1) == 0;
+    }
+
+    function evaluateWinner() view external returns (uint24) {
+        require(config.currentRound == BOUTS, 'Must be last round');
+        BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound - 1];
+
+        uint tranche;
+        uint offset;
+
+        if (bracketStatus.fighterTrancheOne != 0) {
+            tranche = bracketStatus.fighterTrancheOne;
+            offset = 0;
+        } else if (bracketStatus.fighterTrancheTwo != 0) {
+            tranche = bracketStatus.fighterTrancheTwo;
+            offset = 256;
+        } else if (bracketStatus.fighterTrancheThree != 0) {
+            tranche = bracketStatus.fighterTrancheThree;
+            offset = 512;
+        } else if (bracketStatus.fighterTrancheThree != 0) {
+            tranche = bracketStatus.fighterTrancheThree;
+            offset = 768;
+        }
+
+        for (uint r=config.currentRound - 1;r>0;r--) {
+            BracketStatus storage pastBracketStatus = roundBracketStatus[r];
+            if (offset == 0 && ((pastBracketStatus.fighterTrancheOne & tranche) == 0)) {
+                return 16777215;
+            } else if (offset == 256 && ((pastBracketStatus.fighterTrancheTwo & tranche) == 0)) {
+                return 16777215;
+            } else if (offset == 512 && ((pastBracketStatus.fighterTrancheThree & tranche) == 0)) {
+                return 16777215;
+            } else if (offset == 768 && ((pastBracketStatus.fighterTrancheFour & tranche) == 0)) {
+                return 16777215;
+            }
+        }
+        
+        for (uint i=0;i<256;i++) {
+            if ((tranche >> (i)) & 1 == 1) {
+                // config.winningFighterIdentifier = uint24(offset + (i + 1));
+                return uint24(offset + (i + 1));
+            }
+        }
+
+        return 16777215;
     }
     
     function placeBet(uint16 _fighterIdentifier) external payable {
@@ -155,6 +205,11 @@ contract FightClub {
         bracketStatus.fighterTrancheTwo = _fighterTrancheTwo;
         bracketStatus.fighterTrancheThree = _fighterTrancheThree;
         bracketStatus.fighterTrancheFour = _fighterTrancheFour;
+    }
+
+    function getBracketStatus() external view returns (uint, uint, uint, uint) {
+        BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
+        return (bracketStatus.fighterTrancheOne, bracketStatus.fighterTrancheTwo, bracketStatus.fighterTrancheThree, bracketStatus.fighterTrancheFour);
     }
 
     function fight(uint32 _fighterOne, uint32 _fighterTwo) external view returns (uint128) {

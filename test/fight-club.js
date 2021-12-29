@@ -138,16 +138,29 @@ describe("Fight", function() {
                 bracketStatus += fighters[j] == 0 ? "0" : "1";
             }
             let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
-            await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
             await fightClub.connect(accounts[0]).setBracketStatus(BigInt(parseInt(bracketStatus.substring(0,256), 2)).toString(), BigInt(parseInt(bracketStatus.substring(256,512), 2)).toString(), BigInt(parseInt(bracketStatus.substring(512,768), 2)).toString(), BigInt(parseInt(bracketStatus.substring(768,1024), 2)).toString());
+            await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
             await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
             await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
         }
         
-        console.log(`Fighter ${lastFighter} Won the Bracket!`);
+        let winner = await fightClub.connect(accounts[0]).evaluateWinner();
+        console.log(`Fighter ${winner} Won the Bracket!`);
     });
 
+
     // TODO: "fail bet if fighter died"
+
+    // it("evaluateWinner", async function() {
+    //     for (let i of [0,1,2,3,4,5,6,7,8,9]) {
+    //         await (await fightClub.connect(accounts[0]).setBracketStatus(0, 0, 128, 0)).wait();
+    //         console.log(await fightClub.connect(accounts[0]).getBracketStatus());
+    //         await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
+    //         console.log(await fightClub.connect(accounts[0]).getConfig());
+    //     }
+    //     let winner = await fightClub.connect(accounts[0]).evaluateWinner();
+    //     console.log("winner: ", winner);
+    // });
 
     it("fail bet if betting is closed", async function() {
         const _fighterID = 24
