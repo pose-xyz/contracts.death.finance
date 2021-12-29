@@ -137,8 +137,11 @@ describe("Fight", function() {
             for(let j = 0; j < 1024; j+=1) {
                 bracketStatus += fighters[j] == 0 ? "0" : "1";
             }
-            await fightClub.connect(accounts[0]).setBracketStatus(i+1, BigInt(parseInt(bracketStatus.substring(0,256), 2)).toString(), BigInt(parseInt(bracketStatus.substring(256,512), 2)).toString(), BigInt(parseInt(bracketStatus.substring(512,768), 2)).toString(), BigInt(parseInt(bracketStatus.substring(768,1024), 2)).toString());
-            await mineUntil((i * 5) + 4);
+            let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+            await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
+            await fightClub.connect(accounts[0]).setBracketStatus(BigInt(parseInt(bracketStatus.substring(0,256), 2)).toString(), BigInt(parseInt(bracketStatus.substring(256,512), 2)).toString(), BigInt(parseInt(bracketStatus.substring(512,768), 2)).toString(), BigInt(parseInt(bracketStatus.substring(768,1024), 2)).toString());
+            await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
+            await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
         }
         
         console.log(`Fighter ${lastFighter} Won the Bracket!`);

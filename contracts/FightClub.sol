@@ -5,6 +5,7 @@ pragma solidity >= 0.8.0;
 contract FightClub {
 
     // TODO: Figure out fighter registration
+    // TODO: Add winner resolution
 
     address internal controller;
     uint constant BOUTS = 10;
@@ -70,6 +71,7 @@ contract FightClub {
 
     function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
         require(msg.sender == controller, 'Must be called by controller');
+        require(_currentRound >= config.currentRound, 'Requires greater current round');
         config.bettingIsOpen = _bettingIsOpen;
         config.currentRound = _currentRound;
     }
@@ -146,9 +148,9 @@ contract FightClub {
     }
 
     // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 member groups.
-    function setBracketStatus(uint8 _round, uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
+    function setBracketStatus(uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
         require(msg.sender == controller, 'Must be called by controller');
-        BracketStatus storage bracketStatus = roundBracketStatus[_round];
+        BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         bracketStatus.fighterTrancheOne = _fighterTrancheOne;
         bracketStatus.fighterTrancheTwo = _fighterTrancheTwo;
         bracketStatus.fighterTrancheThree = _fighterTrancheThree;
