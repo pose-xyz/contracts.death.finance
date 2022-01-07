@@ -23,6 +23,7 @@ contract FightClub {
 
     struct Config {
         // Betting is open before a round has begun and after the round has completed.
+        bool fighterRedeemed;
         bool bettingIsOpen;
         uint8 currentRound;
         uint24 winningFighterIdentifier;
@@ -337,5 +338,13 @@ contract FightClub {
 
     function elementIsWeak(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
         return (elementsMatrix >> (_elementOne * 13 + _elementTwo)) & 1 > 0;
+    }
+
+    function redeemFighterBounty(bytes memory _signature) external {
+        require(!config.fighterRedeemed, 'Bounty has already been redeemed');
+        require(config.currentRound == BOUTS, 'Must be last round');
+        require(VerifySignature(config.verifySignatureAddress).verifyF(config.signerAddress, msg.sender, config.winningFighterIdentifier, _signature), "Purchaser not on whitelist");
+        config.fighterRedeemed = true;
+        payable(msg.sender).transfer(config.pot / 20);
     }
 }
