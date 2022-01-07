@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: CC-BY-4.0
 
+import { VerifySignature } from "./VerifySignature.sol";
+
 pragma solidity >= 0.8.0;
 
 contract FightClub {
@@ -24,7 +26,10 @@ contract FightClub {
         bool bettingIsOpen;
         uint8 currentRound;
         uint24 winningFighterIdentifier;
+        address signerAddress;
+        address verifySignatureAddress;
         uint pot;
+        bytes32 provenanceHash;
     }
 
     struct FighterBet {
@@ -66,11 +71,14 @@ contract FightClub {
 
     event Winner(uint24 _winner);
 
-    constructor (uint _elementsMatrix) {
+    constructor (uint _elementsMatrix, address _signerAddress, address _verifySignatureAddress, bytes32 _provenanceHash) {
         controller = msg.sender;
         elementsMatrix = _elementsMatrix;
         random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
         config.winningFighterIdentifier = 16777215;
+        config.signerAddress = _signerAddress;
+        config.verifySignatureAddress = _verifySignatureAddress;
+        config.provenanceHash = _provenanceHash;
     }
 
     function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
@@ -146,17 +154,6 @@ contract FightClub {
         }
 
         emit Winner(16777215);
-    }
-
-    function testThing(uint thing) pure external returns(uint24) {
-        for (uint i=0;i<256;i++) {
-            if ((thing >> i) & 1 == 1) {
-                // config.winningFighterIdentifier = uint24(offset + (i + 1));
-                return uint24(i + 1);
-            }
-        }
-
-        return 16777215;
     }
 
     // I have no fighters, I bet on alive fighter (done)

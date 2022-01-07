@@ -13,13 +13,27 @@ describe("FightClub", function() {
     beforeEach(async () => {
         network = await ethers.provider.getNetwork();
         accounts = await ethers.getSigners();
+
+        const VerifySignature = await ethers.getContractFactory("VerifySignature");
+        if (network.name == 'kovan')
+            verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+        else if (network.name == 'goerli')
+            verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+        else
+            verifySignature = await VerifySignature.deploy();
+
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
             fightClub = await FightClub.attach("0xD03D6cF8920c5fe830476dFa3A738B055b30dE81");
         else if (network.name == 'goerli')
             fightClub = await FightClub.attach("0xD03D6cF8920c5fe830476dFa3A738B055b30dE81");
         else
-            fightClub = await FightClub.deploy("193660831688735064581587655956512620320321525841920");
+            fightClub = await FightClub.deploy(
+                "193660831688735064581587655956512620320321525841920",
+                accounts[0].address,
+                verifySignature.address,
+                "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A"
+            );
     });
 
     it("Fight", async function() {
@@ -160,20 +174,6 @@ describe("FightClub", function() {
         console.log(`Fighter ${winner} Won the Bracket!`);
         console.log(`Fighter ${lastFighter} Won the Bracket!`);
     });
-
-
-    // TODO: "fail bet if fighter died"
-
-    // it("evaluateWinner", async function() {
-    //     for (let i of [0,1,2,3,4,5,6,7,8,9]) {
-    //         await (await fightClub.connect(accounts[0]).setBracketStatus(BigInt(Math.pow(2, 232)).toString(), 0, 0, 0)).wait();
-    //         console.log(await fightClub.connect(accounts[0]).getBracketStatus());
-    //         await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
-    //         console.log(await fightClub.connect(accounts[0]).getConfig());
-    //     }
-    //     let winner = await fightClub.connect(accounts[0]).evaluateWinner();
-    //     console.log("winner: ", winner);
-    // });
 
     it("fail bet if betting is closed", async function() {
         const _fighterID = 24
