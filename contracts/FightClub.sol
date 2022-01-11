@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: CC-BY-4.0
 
 import { VerifySignature } from "./VerifySignature.sol";
+import "hardhat/console.sol";
 
 pragma solidity >= 0.8.0;
 
