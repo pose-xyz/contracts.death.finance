@@ -20,7 +20,7 @@ contract VerifySignature {
         return ecrecover(messageHash, v, r, s);
     }
     
-    function verify(
+    function verifyC(
         address _signer,
         address _to,
         uint32 _id,
@@ -28,6 +28,17 @@ contract VerifySignature {
         bytes memory signature
     ) public pure returns (bool) {
         bytes32 payloadHash = getMessageHash(_to, _id, _isBase);
+        bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payloadHash));
+        return recoverSigner(messageHash, signature) == _signer;
+    }
+    
+    function verifyF(
+        address _signer,
+        address _to,
+        uint32 _id,
+        bytes memory signature
+    ) public pure returns (bool) {
+        bytes32 payloadHash = keccak256(abi.encodePacked(_to, _id));
         bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payloadHash));
         return recoverSigner(messageHash, signature) == _signer;
     }
