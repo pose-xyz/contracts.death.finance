@@ -188,39 +188,39 @@ describe("FightClub", function() {
     //     console.log(`Fighter ${lastFighter} Won the Bracket!`);
     // });
 
-    it("fail bet if betting is closed", async function() {
-        const zeroPad = (num, places) => String(num).padStart(places, '0')
-        for (let i = 0; i < brackets.length; i++) {
-            let bracketStatus = brackets[i];
-            let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
-            let bracketStatusArr = [];
-            for (let j = 0; j < 4; j++) {
-                bracketStatusArr[j] = "";
-                let bn_two = new BigNumber(bracketStatus.substring(256*j,256*(j+1)), 2);
-                for (let k = 0; k < bn_two.c.length; k++) {
-                    if (k > 0)
-                        bracketStatusArr[j] += zeroPad(bn_two.c[k].toString(), 14);
-                    else
-                        bracketStatusArr[j] += bn_two.c[k].toString();
-                }
-            }
-            await (await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3])).wait();
-            await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
-            // await fightClub.connect(accounts[1]).placeBet(407, {
-            //     value: ethers.utils.parseEther("1.0")
-            // });
-            await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
-            // await expect(fightClub.connect(accounts[1]).placeBet(616, {
-            //     value: ethers.utils.parseEther("1.0")
-            // })).to.be.revertedWith('Betting is not open; we are mid-round');
-            await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
-            for (let num = 1; num < 1024; num++) {
-                console.log(num, await fightClub.connect(accounts[0]).isFighterAlive(num));
-            }
-        }
-        let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
-        console.log(`Fighter ${winner} Won the Bracket!`);
-    });
+    // it("fail bet if betting is closed", async function() {
+    //     const zeroPad = (num, places) => String(num).padStart(places, '0')
+    //     for (let i = 0; i < brackets.length; i++) {
+    //         let bracketStatus = brackets[i];
+    //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+    //         let bracketStatusArr = [];
+    //         for (let j = 0; j < 4; j++) {
+    //             bracketStatusArr[j] = "";
+    //             let bn_two = new BigNumber(bracketStatus.substring(256*j,256*(j+1)), 2);
+    //             for (let k = 0; k < bn_two.c.length; k++) {
+    //                 if (k > 0)
+    //                     bracketStatusArr[j] += zeroPad(bn_two.c[k].toString(), 14);
+    //                 else
+    //                     bracketStatusArr[j] += bn_two.c[k].toString();
+    //             }
+    //         }
+    //         await (await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3])).wait();
+    //         await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
+    //         // await fightClub.connect(accounts[1]).placeBet(407, {
+    //         //     value: ethers.utils.parseEther("1.0")
+    //         // });
+    //         await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
+    //         // await expect(fightClub.connect(accounts[1]).placeBet(616, {
+    //         //     value: ethers.utils.parseEther("1.0")
+    //         // })).to.be.revertedWith('Betting is not open; we are mid-round');
+    //         await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
+    //         for (let num = 1; num < 1024; num++) {
+    //             console.log(num, await fightClub.connect(accounts[0]).isFighterAlive(num));
+    //         }
+    //     }
+    //     let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
+    //     console.log(`Fighter ${winner} Won the Bracket!`);
+    // });
 
     it("fail bet if betting is closed", async function() {
         const fighterID = 24

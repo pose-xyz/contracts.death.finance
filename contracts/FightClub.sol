@@ -101,7 +101,7 @@ contract FightClub {
         return (config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.pot);
     }
 
-    function isFighterAlive(uint16 _fighterIdentifier) view internal returns (bool) {
+    function isFighterAlive(uint16 _fighterIdentifier) view public returns (bool) {
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         uint trancheNum = _fighterIdentifier / 256;
         uint fighterNum = _fighterIdentifier % 256;
