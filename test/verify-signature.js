@@ -28,7 +28,7 @@
 //     //Expect the recovered address is equal to the address of accounts[0] 
 //     expect(recoveredAddress).to.equal(accounts[0].address);
 
-//     const isValidSignature = await verifySignature.verify(accounts[0].address, accounts[1].address, 0, false, signature);
+//     const isValidSignature = await verifySignature.verifyC(accounts[0].address, accounts[1].address, 0, false, signature);
 //     expect(isValidSignature).to.be.true;
 //   });
 // });
