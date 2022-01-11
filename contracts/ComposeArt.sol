@@ -79,7 +79,7 @@ contract ComposeArt is ERC721, Ownable {
 
     // function createBaseFromWhitelist(address _to, uint32 _id, bytes memory _signature, address _signer) payable public returns (uint32) {
     //     require(config.isWhitelisted, "Config is not whitelisted.");
-    //     require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _id, true, _signature), "Creator not on whitelist");
+    //     require(VerifySignature(config.verifySignatureAddress).verifyC(_signer, _to, _id, true, _signature), "Creator not on whitelist");
     //     require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
     //     baseOwner[config.baseCount] = _to;
     //     releaseBalance[0] = releaseBalance[0] + uint72(msg.value);
@@ -151,7 +151,7 @@ contract ComposeArt is ERC721, Ownable {
         require(releaseTiming.startingIndexBlock == 0, "Sale not active");
         
         if (release.isWhitelisted) {
-            require(VerifySignature(config.verifySignatureAddress).verify(_signer, _to, _releaseId, false, _signature), "Purchaser not on whitelist");
+            require(VerifySignature(config.verifySignatureAddress).verifyC(_signer, _to, _releaseId, false, _signature), "Purchaser not on whitelist");
         }
         require(_numberOfPacks <= release.maxPackPurchase, "Max pack purchase exceeded");
         require((release.packsPurchased + _numberOfPacks) <= release.maxPacks, "Not enough packs remaining");
