@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: CC-BY-4.0
 
 import { VerifySignature } from "./VerifySignature.sol";
+import "hardhat/console.sol";
 
 pragma solidity >= 0.8.0;
 
@@ -246,9 +247,13 @@ contract FightClub {
         return (bracketStatus.fighterTrancheOne, bracketStatus.fighterTrancheTwo, bracketStatus.fighterTrancheThree, bracketStatus.fighterTrancheFour);
     }
 
-    function fight(uint32 _fighterOne, uint32 _fighterTwo) external view returns (uint128) {
-        require(msg.sender == controller, 'Must be called by controller');
-        require(block.number % 5 != 0, 'Blocknum divisible by 5');
+    function fight(bool _isSimulated, uint32 _fighterOne, uint32 _fighterTwo, uint256 _random, uint256 _blockNumber) external view returns (uint128) {
+        require(!_isSimulated && msg.sender == controller, 'Must be called by controller');
+        if (!_isSimulated) {
+            _random = random;
+            _blockNumber = block.number;
+        }
+        require(_blockNumber % 5 != 0, 'Blocknum divisible by 5');
 
         Fighter memory fighterTwo;
         fighterTwo.element = uint8(_fighterTwo & 15);
@@ -269,14 +274,14 @@ contract FightClub {
         
         bool shouldSkip;
         uint128 eventLog = 1;
-        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.number, random)));
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(_blockNumber, _random)));
 
         for (uint b=0;b<BOUTS;b++) {
             eventLog = (eventLog << 1) + (fighterOne.isTurn ? 0 : 1);
             if (fighterOne.isTurn) {
-                (fighterOne, fighterTwo, eventLog, shouldSkip, randomNumber) = attack(fighterOne, fighterTwo, eventLog, randomNumber);
+                (fighterOne, fighterTwo, eventLog, shouldSkip, randomNumber) = attack(fighterOne, fighterTwo, eventLog, randomNumber, _random);
             } else {
-                (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber);
+                (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber, _random);
             }
             if (fighterOne.defense == 0 || fighterTwo.defense == 0) {
                 eventLog = (eventLog << 1) + (fighterTwo.defense == 0 ? 0 : 1);
@@ -287,14 +292,14 @@ contract FightClub {
                 fighterTwo.isTurn = !fighterTwo.isTurn;
             }
             if (b == 9) {
-                eventLog = (eventLog << 1) + ((uint256(keccak256(abi.encodePacked(random, randomNumber))) % 2) == 0 ? 0 : 1);
+                eventLog = (eventLog << 1) + ((uint256(keccak256(abi.encodePacked(_random, randomNumber))) % 2) == 0 ? 0 : 1);
             }
         }
 
         return (eventLog);
     }
 
-    function attack(Fighter memory _attacker, Fighter memory _defender, uint128 _eventLog, uint256 _randomNumber) internal view returns(Fighter memory, Fighter memory, uint128, bool, uint256) {
+    function attack(Fighter memory _attacker, Fighter memory _defender, uint128 _eventLog, uint256 _randomNumber, uint256 _random) internal view returns(Fighter memory, Fighter memory, uint128, bool, uint256) {
         Bout memory bout = createBout(_attacker, _defender, _randomNumber);
 
         if (bout.counter > bout.attack) {
@@ -310,7 +315,7 @@ contract FightClub {
         }
 
         _eventLog = (_eventLog << 8) + (bout.attack << 4) + bout.counter;
-        return (_attacker, _defender, _eventLog, bout.isCritical, uint256(keccak256(abi.encodePacked(random, _randomNumber))));
+        return (_attacker, _defender, _eventLog, bout.isCritical, uint256(keccak256(abi.encodePacked(_random, _randomNumber))));
     }
 
     function createBout(Fighter memory _attacker, Fighter memory _defender, uint256 _randomNumber) internal view returns(Bout memory) {
