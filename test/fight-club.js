@@ -187,6 +187,38 @@ describe("FightClub", function() {
         console.log(`Fighter ${lastFighter} Won the Bracket!`);
     });
 
+    it.only("successfully redeem bet after winning tournament", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0)
+        const betAmount = 69
+        await fightClub.connect(accounts[1]).placeBet((fighterID), {
+            value: betAmount
+        });
+
+        const amount = await fightClub.connect(accounts[1]).getBet();
+        await expect(amount[1]).to.equal(betAmount);
+
+        await fightClub.connect(accounts[0]).setConfig(false, 10);
+
+        const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(24);
+        await fightClub
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+        expect(totalBets).to.equal(betAmount);
+
+        await fightClub.connect(accounts[1]).redeemPot();
+        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+
+        // 5% of the pot is left for the fighter's owner, regardless if the owner was a bettor or not.
+        const fivePercentLeft = Math.ceil(betAmount * 0.05);
+        expect(postRedemptionBets).to.equal(fivePercentRemoved);
+    });
+
     it("fail bet if betting is closed", async function() {
         const fighterID = 24
         await fightClub.connect(accounts[0]).setConfig(false, 0)
