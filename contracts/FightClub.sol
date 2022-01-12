@@ -8,7 +8,6 @@ pragma solidity >= 0.8.0;
 contract FightClub {
 
     // TODO: Figure out fighter registration
-    // TODO: Add winner resolution
 
     address internal controller;
     uint constant BOUTS = 10;
@@ -98,8 +97,8 @@ contract FightClub {
         config.isError = _isError;
     }
 
-    function getConfig() view external returns (bool, uint8, uint24, uint) {
-        return (config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.pot);
+    function getTotalPot() view public returns (uint) {
+        return config.pot;
     }
 
     function isFighterAlive(uint16 _fighterIdentifier) view public returns (bool) {
@@ -360,7 +359,6 @@ contract FightClub {
 
     function redeemPot() external {
         require(config.currentRound == BOUTS, 'Must be last round');
-
         FighterBet storage fighterBet = bets[msg.sender];
         require(isFighterAlive(fighterBet.fighterIdentifier), 'Fighter is eliminated');
         require(!fighterBet.isRedeemed, 'Bet previously redeemed');
@@ -374,8 +372,12 @@ contract FightClub {
         roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
         fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
         fighterTotalPot.lastRoundUpdated = config.currentRound;
-        
-        payable(msg.sender).transfer((config.pot * fighterBet.equityOfAmount * 19) / (fighterTotalPot.equityOfAmount * 20));
+
+        uint bettorsPercentage = fighterBet.equityOfAmount / fighterTotalPot.equityOfAmount;
+        uint bettorsShare = (config.pot * bettorsPercentage * 19) / 20;
+        payable(msg.sender).transfer(bettorsShare);
+        config.pot -= bettorsShare;
+        console.log("Pot share redeemed, total pot is now %s", config.pot);
     }
 
     function emergencyWithdrawal() external {
