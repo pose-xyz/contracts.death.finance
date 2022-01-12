@@ -248,7 +248,7 @@ contract FightClub {
     }
 
     function fight(bool _isSimulated, uint32 _fighterOne, uint32 _fighterTwo, uint256 _random, uint256 _blockNumber) external view returns (uint128) {
-        require(!_isSimulated && msg.sender == controller, 'Must be called by controller');
+        require(_isSimulated || msg.sender == controller, 'Must be called by controller');
         if (!_isSimulated) {
             _random = random;
             _blockNumber = block.number;
