@@ -6,7 +6,6 @@ describe("FightClub", function() {
     let network;
     let accounts;
     let fightClub;
-    let allFightersAliveTranche = BigInt(2 ** 32 - 1);
 
     const firstRoundFighters    = "1010011001010101101010100101011001011010011010100110010110100101101010101001011001010101010101010101011001010110010110100101011001010101100101100110011010010110010101010101011010011001010101011010010101010101010110011001010101011010100101010110011010011001100101101001100110010101101001011001100110010101011010101010100101101001010101010110100101010110101001101010011001010101010101010110010110010101101001010101100110011010010101011010010101010101101001100101101010100101101010011010010101101001010101101001010101010101101010010110011010100101100110010101101010010110100101010110010101011001011010101001010101101010100110011001101001010110101001011010011001010101010101100110010110101010011001010110011001100101010110100101010101101001010110010101010101010101011001011001011001101001011010100101010110011001100110100101011001011010010110101001101001010110011001011001100101010101010101010101010110100101010101010101010110100101100110011010010110010101010101100101010101101001010110010101010101010110010101011010010101100110";
     const secondRoundFighters   = "0010010000010100001000100100001001000010001010000100010010000100001010001000010000010001010001000001001000010100000100100100010001000001000100100100010010000010000100010001001000010001000101001000010001000001010010001000000100010010000100010100001000010001000101001000000100010001100000011000000110000001001000100010000100100001000100010100100000010010100000101000001000010001010001000100000110000001001000010100000110000010000100011000000101000001001000100001100000100001100010000010000100100001000100100001010000010100100010000100010010000001100010000100001000010100000100010010010001001000001000100001000100100010000110000001001001000010001000010010001000010100000100100010010010001000001001000100010000100001000100100001010001000001000110000001000101000100010000010001001000100001001010000001000100010001100000100001001000011000010010001000100001000010001000010001000101000001000100010001010000100001000101000001000100100100000110000010000100010001000101000100010000100001010000010001000101000010000101000010010001000010";
@@ -198,39 +197,37 @@ describe("FightClub", function() {
     //     console.log(`Fighter ${lastFighter} Won the Bracket!`);
     // });
 
-    it("fail bet if betting is closed", async function() {
-        const zeroPad = (num, places) => String(num).padStart(places, '0')
-        for (let i = 0; i < brackets.length; i++) {
-            let bracketStatus = brackets[i];
-            let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
-            let bracketStatusArr = [];
-            for (let j = 0; j < 4; j++) {
-                bracketStatusArr[j] = "";
-                let bn_two = new BigNumber(bracketStatus.substring(256*j,256*(j+1)), 2);
-                for (let k = 0; k < bn_two.c.length; k++) {
-                    if (k > 0)
-                        bracketStatusArr[j] += zeroPad(bn_two.c[k].toString(), 14);
-                    else
-                        bracketStatusArr[j] += bn_two.c[k].toString();
-                }
-            }
-            await (await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3])).wait();
-            await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
-            // await fightClub.connect(accounts[1]).placeBet(407, {
-            //     value: ethers.utils.parseEther("1.0")
-            // });
-            await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
-            // await expect(fightClub.connect(accounts[1]).placeBet(616, {
-            //     value: ethers.utils.parseEther("1.0")
-            // })).to.be.revertedWith('Betting is not open; we are mid-round');
-            await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
-            // for (let num = 1; num < 1024; num++) {
-            //     console.log(num, await fightClub.connect(accounts[0]).isFighterAlive(num));
-            // }
-        }
-        let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
-        console.log(`Fighter ${winner} Won the Bracket!`);
-    });
+    // it.only("succeed in placing subsequent bets on same fighter", async function() {
+    //     const zeroPad = (num, places) => String(num).padStart(places, '0')
+    //     for (let i = 0; i < brackets.length; i++) {
+    //         console.log("hi")
+    //         let bracketStatus = brackets[i];
+    //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+    //         let bracketStatusArr = [];
+    //         for (let j = 0; j < 4; j++) {
+    //             bracketStatusArr[j] = "";
+    //             let bn_two = new BigNumber(bracketStatus.substring(256*j,256*(j+1)), 2);
+    //             for (let k = 0; k < bn_two.c.length; k++) {
+    //                 if (k > 0)
+    //                     bracketStatusArr[j] += zeroPad(bn_two.c[k].toString(), 14);
+    //                 else
+    //                     bracketStatusArr[j] += bn_two.c[k].toString();
+    //             }
+    //         }
+    //         await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3]);
+    //         await fightClub.connect(accounts[0]).setConfig(true, i);
+    //         await fightClub.connect(accounts[1]).placeBet(407, {
+    //             value: ethers.utils.parseEther("1.0")
+    //         });
+    //         await fightClub.connect(accounts[0]).setConfig(false, i+1);
+    //         await expect(fightClub.connect(accounts[1]).placeBet(616, {
+    //             value: ethers.utils.parseEther("1.0")
+    //         })).to.be.revertedWith('Betting is not open; we are mid-round');
+    //         await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
+    //     }
+    //     let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
+    //     console.log(`Fighter ${winner} Won the Bracket!`);
+    // });
 
     it("fail bet if betting is closed", async function() {
         const fighterID = 24
@@ -267,6 +264,7 @@ describe("FightClub", function() {
     });
 
     it("place two successful bets on same fighter, different rounds", async function() {
+        
         const fighterID = 24
         await fightClub.connect(accounts[0]).setConfig(true, 0);
 
@@ -282,10 +280,10 @@ describe("FightClub", function() {
         await fightClub.connect(accounts[0]).setConfig(true, 1);
         await fightClub.connect(accounts[0])
         .setBracketStatus(
-            allFightersAliveTranche,
-            allFightersAliveTranche,
-            allFightersAliveTranche,
-            allFightersAliveTranche);
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche());
 
         await fightClub.connect(accounts[1]).placeBet(fighterID, {
             value: ethers.utils.parseEther("1.5")
@@ -347,9 +345,9 @@ describe("FightClub", function() {
         await fightClub.connect(accounts[0])
         .setBracketStatus(
             onlyOurFighterDead, 
-            allFightersAliveTranche,
-            allFightersAliveTranche,
-            allFightersAliveTranche);
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche());
         await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
             value: ethers.utils.parseEther("1.0")
         })).to.be.revertedWith('Fighter is eliminated');
@@ -363,9 +361,9 @@ describe("FightClub", function() {
         await fightClub.connect(accounts[0])
         .setBracketStatus(
             onlyOurFighterDead, 
-            allFightersAliveTranche, 
-            allFightersAliveTranche, 
-            allFightersAliveTranche);
+            allFightersAliveTranche(), 
+            allFightersAliveTranche(), 
+            allFightersAliveTranche());
         await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
             value: ethers.utils.parseEther("1.0")
         }));
@@ -378,6 +376,20 @@ const mineUntil = async function (blockNum) {
         await ethers.provider.send('evm_mine');
         currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
     }
+}
+
+const allFightersAliveTranche = function () {
+    
+    bracketStatus = "";
+    const zeroPad = (num, places) => String(num).padStart(places, '0');
+    let bn_two = new BigNumber("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", 2);
+    for (let k = 0; k < bn_two.c.length; k++) {
+        if (k > 0)
+            bracketStatus += zeroPad(bn_two.c[k].toString(), 14);
+        else
+            bracketStatus += bn_two.c[k].toString();
+    }
+    return bracketStatus;
 }
 
 // Notes

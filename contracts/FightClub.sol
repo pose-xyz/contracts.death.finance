@@ -105,7 +105,7 @@ contract FightClub {
     function isFighterAlive(uint16 _fighterIdentifier) view public returns (bool) {
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         uint trancheNum = _fighterIdentifier / 256;
-        uint fighterNum = _fighterIdentifier % 256;
+        uint fighterNum = 256 - (_fighterIdentifier % 256);
 
         uint tranche = 0;
         if (trancheNum == 0) {
