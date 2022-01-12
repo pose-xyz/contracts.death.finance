@@ -127,7 +127,8 @@ describe("FightClub", function() {
 
     });
 
-    // it("Bracket", async function() {
+    // NOTE: This test is commented out because it is slow and can be ran separately
+    // it.only("Bracket", async function() {
         
     //     const zeroPad = (num, places) => String(num).padStart(places, '0')
 
@@ -197,6 +198,7 @@ describe("FightClub", function() {
     //     console.log(`Fighter ${lastFighter} Won the Bracket!`);
     // });
 
+    // NOTE: This test is commented out because it is slow and can be ran separately
     // it.only("succeed in placing subsequent bets on same fighter", async function() {
     //     const zeroPad = (num, places) => String(num).padStart(places, '0')
     //     for (let i = 0; i < brackets.length; i++) {
