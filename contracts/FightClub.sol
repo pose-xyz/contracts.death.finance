@@ -8,7 +8,6 @@ pragma solidity >= 0.8.0;
 contract FightClub {
 
     // TODO: Figure out fighter registration
-    // TODO: Add winner resolution
 
     address internal controller;
     uint constant BOUTS = 10;
@@ -33,6 +32,8 @@ contract FightClub {
         address signerAddress;
         address verifySignatureAddress;
         uint pot;
+        uint potHighWaterMark;
+        uint winningFighterOwnerPayout;
         bytes32 provenanceHash;
     }
 
@@ -98,14 +99,13 @@ contract FightClub {
         config.isError = _isError;
     }
 
-    function getConfig() view external returns (bool, uint8, uint24, uint) {
-        return (config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.pot);
+    function getTotalPot() view public returns (uint) {
+        return config.pot;
     }
 
     function isFighterAlive(uint16 _fighterIdentifier) view public returns (bool) {
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         uint trancheNum = _fighterIdentifier / 256;
-        uint fighterNum = 256 - (_fighterIdentifier % 256);
 
         uint tranche = 0;
         if (trancheNum == 0) {
@@ -118,8 +118,20 @@ contract FightClub {
             tranche = bracketStatus.fighterTrancheFour;
         }
 
-        uint onlySetFightersBit = 1 << (fighterNum - 1);
-        return (tranche & onlySetFightersBit) > 0;
+        uint onlyThisFighter = bracketWithOnlyFighterAlive(_fighterIdentifier);
+        uint andAdded = tranche & onlyThisFighter;
+        return andAdded > 0;
+    }
+
+    function bracketWithOnlyFighterAlive(uint16 _fighterIdentifier) pure public returns (uint256) {
+        uint fighterNum = 256 - (_fighterIdentifier % 256);
+        return 1 << (fighterNum - 1);
+    }
+
+    function getEquityForBet(uint80 _equity, uint8 _lastRoundUpdated) public view returns (uint80) {
+        uint8 roundDifference = config.currentRound - _lastRoundUpdated;
+        uint80 multiplier = uint80(2) ** roundDifference;
+        return _equity * multiplier;
     }
 
     function evaluateWinner() external {
@@ -166,12 +178,14 @@ contract FightClub {
         emit Winner(16777215);
     }
 
-    // I have no fighters, I bet on alive fighter (done)
-    // I have no fighters, I bet on dead fighter (done)
-    // I have a fighter and he's alive, and I bet on him (done)
-    // I have a fighter and he's dead, and I bet on him (done)
-    // I have a fighter and he's alive, and I bet on another (done)
-    // I have a fighter and he's dead, and I bet on another (done)
+    function getFighterTotalPot(uint16 _fighterIdentifier) public view returns (uint8, uint80, uint80) {
+        FighterBet storage pot = fighterTotalPots[_fighterIdentifier];
+        return (
+            pot.lastRoundUpdated,
+            pot.amount,
+            pot.equityOfAmount
+        );
+    }
     
     function placeBet(uint16 _fighterIdentifier) external payable {
         require(msg.value > 0, 'Must place a bet higher than zero');
@@ -210,6 +224,7 @@ contract FightClub {
         // Update total pot
         bettorTotalContributions[msg.sender] += newBetAmount;
         config.pot += newBetAmount;
+        config.potHighWaterMark += newBetAmount;
     }
 
     function setNewBetProperties(FighterBet storage _bet, uint80 newBetAmount) internal {
@@ -361,7 +376,6 @@ contract FightClub {
 
     function redeemPot() external {
         require(config.currentRound == BOUTS, 'Must be last round');
-
         FighterBet storage fighterBet = bets[msg.sender];
         require(isFighterAlive(fighterBet.fighterIdentifier), 'Fighter is eliminated');
         require(!fighterBet.isRedeemed, 'Bet previously redeemed');
@@ -375,8 +389,29 @@ contract FightClub {
         roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
         fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
         fighterTotalPot.lastRoundUpdated = config.currentRound;
-        
-        payable(msg.sender).transfer((config.pot * fighterBet.equityOfAmount * 19) / (fighterTotalPot.equityOfAmount * 20));
+
+        console.log("In redeemPot(), fighterEquity is %s and fighterTotalEquity is %s.",
+            fighterBet.equityOfAmount,
+            fighterTotalPot.equityOfAmount);
+
+        if (config.winningFighterOwnerPayout == 0) {
+            setWinningFighterOwnerPayout();
+        }
+
+        uint bettorsShare = (config.potHighWaterMark * fighterBet.equityOfAmount) / fighterTotalPot.equityOfAmount;
+        console.log("Transferring bettor's share of %s to bettor.", bettorsShare);
+        payable(msg.sender).transfer(bettorsShare);
+        config.pot -= bettorsShare;
+        console.log("Pot share of %s redeemed, total pot is now %s.", bettorsShare, config.pot);
+    }
+
+    // 5% of the pot is left for the fighter's owner, regardless if the owner was a bettor or not.
+    function setWinningFighterOwnerPayout() internal {
+        uint ownersShare = config.pot / 20;
+        console.log("Setting aside 5% of pot for owner, totalling %s", ownersShare);
+        config.winningFighterOwnerPayout = ownersShare;
+        config.pot -= ownersShare;
+        config.potHighWaterMark -= ownersShare;
     }
 
     function emergencyWithdrawal() external {
