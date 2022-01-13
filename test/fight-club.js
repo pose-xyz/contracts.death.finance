@@ -1,60 +1,13 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const BigNumber = require('bignumber.js');
+const exampleBracket = require('./example-bracket.json');
 
 describe("FightClub", function() {
     let network;
     let accounts;
     let fightClub;
-    let allFightersAliveTranche = BigInt(2 ** 32 - 1);
-
-    const firstRoundFighters    = "1010011001010101101010100101011001011010011010100110010110100101101010101001011001010101010101010101011001010110010110100101011001010101100101100110011010010110010101010101011010011001010101011010010101010101010110011001010101011010100101010110011010011001100101101001100110010101101001011001100110010101011010101010100101101001010101010110100101010110101001101010011001010101010101010110010110010101101001010101100110011010010101011010010101010101101001100101101010100101101010011010010101101001010101101001010101010101101010010110011010100101100110010101101010010110100101010110010101011001011010101001010101101010100110011001101001010110101001011010011001010101010101100110010110101010011001010110011001100101010110100101010101101001010110010101010101010101011001011001011001101001011010100101010110011001100110100101011001011010010110101001101001010110011001011001100101010101010101010101010110100101010101010101010110100101100110011010010110010101010101100101010101101001010110010101010101010110010101011010010101100110";
-    const secondRoundFighters   = "0010010000010100001000100100001001000010001010000100010010000100001010001000010000010001010001000001001000010100000100100100010001000001000100100100010010000010000100010001001000010001000101001000010001000001010010001000000100010010000100010100001000010001000101001000000100010001100000011000000110000001001000100010000100100001000100010100100000010010100000101000001000010001010001000100000110000001001000010100000110000010000100011000000101000001001000100001100000100001100010000010000100100001000100100001010000010100100010000100010010000001100010000100001000010100000100010010010001001000001000100001000100100010000110000001001001000010001000010010001000010100000100100010010010001000001001000100010000100001000100100001010001000001000110000001000101000100010000010001001000100001001010000001000100010001100000100001001000011000010010001000100001000010001000010001000101000001000100010001010000100001000101000001000100100100000110000010000100010001000101000100010000100001010000010001000101000010000101000010010001000010";
-    const thirdRoundFighters    = "0000010000000100000000100000001000000010000010000000010000000100000010000000010000000001010000000001000000000100000100000000010000000001000000100000010010000000000000010000001000000001000001001000000001000000010000000000000100000010000100000000001000000001000100000000000100000001000000010000000110000000001000000000000100000001000100000000100000000010100000001000000000000001010000000000000110000000000000010100000000000010000000010000000100000001000000100001000000100000000010000010000000000001000000100000010000000100000010000000010010000000000010000000001000000100000000010000010000001000000000100001000000000010000010000000001000000010000000010010000000010000000100000000010000001000000001000100000000000001000100000000010001000000000100000001000000000100000000010000001000100000001000000001000000000001000000100000001000001000000010001000000000000010000000010001000001000000000000010000010000000001000100000000000100000100000100000000000100000001000001000100000000000001010000000001000000000010000100000000010001000000";
-    const fourthRoundFighters   = "0000000000000100000000000000001000000000000010000000000000000100000000000000010000000000010000000000000000000100000100000000000000000000000000100000000010000000000000000000001000000000000001001000000000000000010000000000000000000000000100000000000000000001000100000000000000000000000000010000000010000000001000000000000000000000000100000000100000000000000000001000000000000001000000000000000100000000000000010000000000000010000000000000000000000001000000100000000000000000000010000000000000000001000000000000010000000000000010000000010000000000000000000000001000000000000000010000010000000000000000000001000000000010000000000000001000000000000000000010000000000000000100000000000000001000000000000100000000000001000000000000000001000000000000000001000000000000000000010000000000100000000000000001000000000001000000000000000000001000000000001000000000000010000000000000000001000000000000010000000000000000000100000000000000000100000100000000000000000000000001000000000000000001010000000000000000000010000000000000010000000000";
-    const fifthRoundFighters    = "0000000000000100000000000000000000000000000010000000000000000000000000000000010000000000000000000000000000000000000100000000000000000000000000100000000000000000000000000000000000000000000001000000000000000000010000000000000000000000000100000000000000000000000000000000000000000000000000010000000010000000000000000000000000000000000000000000100000000000000000001000000000000000000000000000000000000000000000010000000000000000000000000000000000000001000000100000000000000000000000000000000000000001000000000000000000000000000000000000010000000000000000000000000000000000000000010000000000000000000000000001000000000000000000000000001000000000000000000000000000000000000100000000000000001000000000000000000000000000000000000000000001000000000000000001000000000000000000000000000000000000000000000001000000000001000000000000000000000000000000000000000000000010000000000000000001000000000000000000000000000000000100000000000000000000000100000000000000000000000000000000000000000001000000000000000000000010000000000000000000000000";
-    const sixthRoundFighters    = "0000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000";
-    const seventhRoundFighters  = "0000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000";
-    const eigthRoundFighters    = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000";
-    const ninthRoundFighters    = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    const tenthRoundFighters    = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    const brackets = [firstRoundFighters, secondRoundFighters, thirdRoundFighters, fourthRoundFighters, fifthRoundFighters, sixthRoundFighters, seventhRoundFighters, eigthRoundFighters, ninthRoundFighters, tenthRoundFighters];
-
-    const bracketJson = [
-        {
-            "round": 0,
-            "fight": 0,
-            "blockNumber": 2,
-            "fighterOneId": 0,
-            "fighterOneUrl": "https://opensea.com",
-            "fighterTwoId": 1,
-            "fighterTwoUrl": "https://opensea.com",
-            "prevRoundOne": -1,
-            "prevRoundTwo": -1
-        },
-        {
-            "round": 0,
-            "fight": 1,
-            "blockNumber": 7,
-            "fighterOneId": 2,
-            "fighterOneUrl": "https://opensea.com",
-            "fighterTwoId": 3,
-            "fighterTwoUrl": "https://opensea.com",
-            "prevRoundOne": -1,
-            "prevRoundTwo": -1
-        },
-        {
-            "round": 1,
-            "fight": 0,
-            "blockNumber": 12,
-            "fighterOneId": -1,
-            "fighterOneUrl": "https://opensea.com",
-            "fighterTwoId": -1,
-            "fighterTwoUrl": "https://opensea.com",
-            "prevRoundOne": 0,
-            "prevRoundTwo": 1
-        }
-    ]
+    const simulatedEventLog = "11010100000000000001001000000011100000001100001001000000001000001010100000000100001010100001";
 
     this.timeout(120000);
 
@@ -80,287 +33,351 @@ describe("FightClub", function() {
                 "193660831688735064581587655956512620320321525841920",
                 accounts[0].address,
                 verifySignature.address,
-                ethers.utils.solidityKeccak256([ "string" ], [ JSON.stringify(bracketJson) ])
+                ethers.utils.solidityKeccak256([ "string" ], [ JSON.stringify(exampleBracket) ])
             );
     });
 
-    // it("Fight", async function() {
+    it("Fight", async function() {
         
-    //     const zeroPad = (num, places) => String(num).padStart(places, '0')
+        const zeroPad = (num, places) => String(num).padStart(places, '0')
 
-    //     let fighterOneStats = 8337395;
-    //     let fighterTwoStats = 8333282;
-    //     fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
-    //     fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
-    //     console.log("------------------PLAYER ONE------------------")
-    //     console.log("Special Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
-    //     console.log("Special Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
-    //     console.log("Attack: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
-    //     console.log("Defense: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
-    //     console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
-    //     console.log("Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
-    //     console.log("\n");
-    //     console.log("------------------PLAYER TWO------------------")
-    //     console.log("Special Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
-    //     console.log("Special Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
-    //     console.log("Attack: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-    //     console.log("Defense: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
-    //     console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
-    //     console.log("Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
-    //     console.log("\n");
-    //     console.log("---------------------FIGHT---------------------");
+        let fighterOneStats = 8337395;
+        let fighterTwoStats = 8333282;
+        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
+        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
+        console.log("------------------PLAYER ONE------------------")
+        console.log("Special Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
+        console.log("Special Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
+        console.log("Attack: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
+        console.log("Defense: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
+        console.log("Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
+        console.log("\n");
+        console.log("------------------PLAYER TWO------------------")
+        console.log("Special Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
+        console.log("Special Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
+        console.log("Attack: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
+        console.log("Defense: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
+        console.log("Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
+        console.log("\n");
+        console.log("---------------------FIGHT---------------------");
 
-    //     await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
-    //         "Blocknum not divisible by 5"
-    //     );
+        await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
+            "Blocknum not divisible by 5"
+        );
 
-    //     await mineUntil(9);
+        await mineUntil(9);
 
-    //     await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
-    //         "Multiplier less than 2"
-    //     );
+        await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
+            "Multiplier less than 2"
+        );
 
-    //     await mineUntil(14);
+        await mineUntil(14);
 
-    //     await expect(fightClub.connect(accounts[1]).addRandomness(1)).to.be.revertedWith(
-    //         "Multiplier less than 2"
-    //     );
+        await expect(fightClub.connect(accounts[1]).addRandomness(1)).to.be.revertedWith(
+            "Multiplier less than 2"
+        );
 
-    //     await mineUntil(19);
+        await mineUntil(19);
 
-    //     await fightClub.connect(accounts[1]).addRandomness(2423432);
+        await fightClub.connect(accounts[1]).addRandomness(2423432);
 
-    //     await expect(fightClub.connect(accounts[1]).fight(fighterOneStats, fighterTwoStats)).to.be.revertedWith(
-    //         "Must be called by controller"
-    //     );
+        await expect(fightClub.connect(accounts[1]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
+            "Must be called by controller"
+        );
 
-    //     await mineUntil(25);
+        await mineUntil(25);
 
-    //     await expect(fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats)).to.be.revertedWith(
-    //         "Blocknum divisible by 5"
-    //     );
+        await expect(fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
+            "Blocknum divisible by 5"
+        );
 
-    //     await mineUntil(26);
+        await mineUntil(26);
 
-    //     eventLog = await fightClub.connect(accounts[0]).fight(fighterOneStats, fighterTwoStats);
-    //     const EVENT_SIZE = 9;
-    //     eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
-    //     const isTie = (eventLog.length % EVENT_SIZE) == 1;
+        eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
+        const EVENT_SIZE = 9;
+        eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
+        let isTie = (eventLog.length % EVENT_SIZE) == 1;
         
-    //     for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
-    //         console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
-    //     }
-    //     console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
-    // });
+        for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
+            console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
+        }
+        console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
 
-    // it("Bracket", async function() {
+        eventLog = await fightClub.connect(accounts[1]).fight(true, fighterOneStats, fighterTwoStats, '47253922380151261668899214344815469786', 31);
+        eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
+        isTie = (eventLog.length % EVENT_SIZE) == 1;
+        await expect(eventLog).to.equal(simulatedEventLog);
         
-    //     const zeroPad = (num, places) => String(num).padStart(places, '0')
+        for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
+            console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
+        }
+        console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
 
-    //     let fighters = {};
-    //     let lastFighter = -1;
+    });
 
-    //     for(let i = 0; i < 1024; i+=1) {
-    //         let fighterStat = "";
-    //         for(let j = 0; j < 6; j+=1) {
-    //             fighterStat += zeroPad((Math.floor(Math.random() * 15) + 1).toString(2), 4);
-    //         }
-    //         fighters[i] = parseInt(fighterStat, 2);
-    //     }
-        
-    //     for (let i of [0,1,2,3,4,5,6,7,8,9]) {
-    //         let firstFighter = -1;
-    //         let secondFighter = -1;
+    it("successfully redeem bet after winning tournament", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0)
+        const betAmount = 69
+        await fightClub.connect(accounts[1]).placeBet((fighterID), {
+            value: betAmount
+        });
 
-    //         for (let j of Object.keys(fighters)) {
-    //             if (fighters[j] != 0) {
-    //                 if (firstFighter == -1) {
-    //                     firstFighter = j;
-    //                 } else if (secondFighter == -1) {
-    //                     secondFighter = j;
-    //                 }
-    //                 if (firstFighter != -1 && secondFighter != -1) {
-    //                     eventLog = await fightClub.connect(accounts[0]).fight(fighters[firstFighter], fighters[secondFighter]);
-    //                     eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
-    //                     if (parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0) {
-    //                         fighters[secondFighter] = 0;
-    //                         lastFighter = firstFighter;
-    //                     } else {
-    //                         fighters[firstFighter] = 0;
-    //                         lastFighter = secondFighter;
-    //                     }
-    //                     firstFighter = -1;
-    //                     secondFighter = -1;
-    //                 }
-    //             }
-    //         }
+        const amount = await fightClub.connect(accounts[1]).getBet();
+        await expect(amount[1]).to.equal(betAmount);
 
-    //         let bracketStatus = "";
-    //         for(let j = 0; j < 1024; j+=1) {
-    //             bracketStatus += fighters[j] == 0 ? "0" : "1";
-    //         }
-            
-    //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
-    //         let bracketStatusArr = [];
-    //         for (let i = 0; i < 4; i++) {
-    //             bracketStatusArr[i] = "";
-    //             let bn_two = new BigNumber(bracketStatus.substring(256*i,256*(i+1)), 2);
-    //             for (let j = 0; j < bn_two.c.length; j++) {
-    //                 if (j > 0)
-    //                     bracketStatusArr[i] += zeroPad(bn_two.c[j].toString(), 14);
-    //                 else
-    //                     bracketStatusArr[i] += bn_two.c[j].toString();
-    //             }
-    //         }
-    //         await (await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3])).wait();
-    //         await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
-    //         await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
-    //         await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
-    //     }
-        
-    //     let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
-    //     console.log(`Fighter ${winner} Won the Bracket!`);
-    //     console.log(`Fighter ${lastFighter} Won the Bracket!`);
-    // });
+        await fightClub.connect(accounts[0]).setConfig(false, 10);
 
-    // it("fail bet if betting is closed", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(false, 0)
-    //     await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     })).to.be.revertedWith('Betting is not open; we are mid-round');
-    // });
+        const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(24);
+        await fightClub
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+        expect(totalBets).to.equal(betAmount);
+
+        await fightClub.connect(accounts[1]).redeemPot();
+        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+
+        expect(postRedemptionBets).to.equal(0);
+    });
+
+    it("successfully redeem bet after winning tournament, with multiple bettors on different rounds", async function() {
+        const fighterID = 24
+
+        const winningBracket = await fightClub
+            .connect(accounts[0])
+            .bracketWithOnlyFighterAlive(24);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        // First bettor.
+        const firstBettorRound = 0
+        await fightClub.connect(accounts[0]).setConfig(true, firstBettorRound)
+        const firstBetAmount = 69
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: firstBetAmount
+        });
+
+        // Second bettor.
+        const secondBettorRound = 3
+        await fightClub.connect(accounts[0]).setConfig(true, secondBettorRound);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+        const secondBetAmount = 42
+        await fightClub.connect(accounts[2]).placeBet((fighterID), {
+            value: secondBetAmount
+        });
+
+        // Third bettor.
+        const thirdBettorRound = 7
+        await fightClub.connect(accounts[0]).setConfig(true, thirdBettorRound);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+        const thirdBetAmount = 420
+        await fightClub.connect(accounts[3]).placeBet((fighterID), {
+            value: thirdBetAmount
+        });
+
+        // Final round
+        await fightClub.connect(accounts[0]).setConfig(true, 10);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        // Pot includes all three bettor amounts.
+        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+        expect(totalBets).to.equal(firstBetAmount + secondBetAmount + thirdBetAmount);
+
+        const fighterTotalPot = await fightClub.connect(accounts[1]).getFighterTotalPot(fighterID);
+        const fighterTotalEquity = await fightClub.connect(accounts[1]).getEquityForBet(fighterTotalPot[2], fighterTotalPot[0]);
+
+        const totalRounds = 10
+        const firstBettorBet = await fightClub.connect(accounts[1]).getBet();
+        const firstBettorLastUpdatedRound = firstBettorBet[3];
+        const firstBettorEquity = firstBettorBet[2] * (Math.pow(2, (totalRounds - firstBettorLastUpdatedRound)));
+        await expect(firstBettorEquity).to.equal(firstBetAmount * (Math.pow(2, (totalRounds - firstBettorRound))));
+        const firstBettorPercentage = firstBettorEquity / fighterTotalEquity;
+
+        const secondBettorBet = await fightClub.connect(accounts[2]).getBet();
+        const secondBettorLastUpdatedRound = secondBettorBet[3];
+        const secondBettorEquity = secondBettorBet[2] * (Math.pow(2, (totalRounds - secondBettorLastUpdatedRound)));
+        await expect(secondBettorEquity).to.equal(secondBetAmount * (Math.pow(2, (totalRounds - secondBettorRound))));
+        const secondBettorPercentage = secondBettorEquity / fighterTotalEquity;
+
+        const thirdBettorBet = await fightClub.connect(accounts[3]).getBet();
+        const thirdBettorLastUpdatedRound = thirdBettorBet[3];
+        const thirdBettorEquity = thirdBettorBet[2] * (Math.pow(2, (totalRounds - thirdBettorLastUpdatedRound)));
+        await expect(thirdBettorEquity).to.equal(thirdBetAmount * (Math.pow(2, totalRounds - thirdBettorRound)));
+
+        const preRedemptionPot = await fightClub.connect(accounts[0]).getTotalPot();
+        console.log("Pre redemption pot is %s.", preRedemptionPot);
+        await fightClub.connect(accounts[1]).redeemPot();
+        await fightClub.connect(accounts[2]).redeemPot();
+        await fightClub.connect(accounts[3]).redeemPot();
+        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+        console.log("After all three redemptions, pot is %s.", postRedemptionBets);
+    });
+
+    it("fail bet if betting is closed", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(false, 0)
+        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        })).to.be.revertedWith('Betting is not open; we are mid-round');
+    });
  
-    // it("successfully place bet", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(true, 0)
-    //     await fightClub.connect(accounts[1]).placeBet((fighterID),{
-    //         value: ethers.utils.parseEther("1.0")
-    //     });
+    it("successfully place bet", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0)
+        await fightClub.connect(accounts[1]).placeBet((fighterID),{
+            value: ethers.utils.parseEther("1.0")
+        });
 
-    //     const amount = await fightClub.connect(accounts[1]).getBet();
-    //     await expect(amount[1]).to.equal(ethers.utils.parseEther("1.0"));
-    // });
+        const amount = await fightClub.connect(accounts[1]).getBet();
+        await expect(amount[1]).to.equal(ethers.utils.parseEther("1.0"));
+    });
 
-    // it("place two successful bets on same fighter, same round", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(true, 0);
+    it("place two successful bets on same fighter, same round", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-    //     await fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     });
-    //     await fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.5")
-    //     });
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        });
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.5")
+        });
 
-    //     const afterTwoBets = await fightClub.connect(accounts[1]).getBet();
-    //     await expect(afterTwoBets[1]).to.equal(ethers.utils.parseEther("2.5"));
-    // });
+        const afterTwoBets = await fightClub.connect(accounts[1]).getBet();
+        await expect(afterTwoBets[1]).to.equal(ethers.utils.parseEther("2.5"));
+    });
 
-    // it("place two successful bets on same fighter, different rounds", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(true, 0);
+    it("place two successful bets on same fighter, different rounds", async function() {
+        
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-    //     await fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     });
-    //     const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
-    //     const firstRoundBetAmount = firstRoundBet[1];
-    //     await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
-    //     const firstRoundBetEquity = firstRoundBet[2];
-    //     await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        });
+        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const firstRoundBetAmount = firstRoundBet[1];
+        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+        const firstRoundBetEquity = firstRoundBet[2];
+        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
 
-    //     await fightClub.connect(accounts[0]).setConfig(true, 1);
-    //     await fightClub.connect(accounts[0])
-    //     .setBracketStatus(
-    //         allFightersAliveTranche,
-    //         allFightersAliveTranche,
-    //         allFightersAliveTranche,
-    //         allFightersAliveTranche);
+        await fightClub.connect(accounts[0]).setConfig(true, 1);
+        await fightClub.connect(accounts[0])
+        .setBracketStatus(
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche());
 
-    //     await fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.5")
-    //     });
-    //     const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
-    //     const secondRoundBetAmount = secondRoundBet[1];
-    //     await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.5")
+        });
+        const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const secondRoundBetAmount = secondRoundBet[1];
+        await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
 
-    //     const secondRoundBetEquity = secondRoundBet[2];
-    //     await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("3.5"));
-    // });
+        const secondRoundBetEquity = secondRoundBet[2];
+        await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("3.5"));
+    });
 
-    // it("place two successful bets on same fighter, same round", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(true, 0);
+    it("place two successful bets on same fighter, same round", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-    //     await fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     });
-    //     const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
-    //     const firstRoundBetAmount = firstRoundBet[1];
-    //     await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
-    //     const firstRoundBetEquity = firstRoundBet[2];
-    //     await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        });
+        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const firstRoundBetAmount = firstRoundBet[1];
+        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+        const firstRoundBetEquity = firstRoundBet[2];
+        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
 
-    //     await fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.5")
-    //     });
-    //     const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
-    //     const secondRoundBetAmount = secondRoundBet[1];
-    //     await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
-    //     const secondRoundBetEquity = secondRoundBet[2];
-    //     await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("2.5"));
-    // });
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.5")
+        });
+        const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const secondRoundBetAmount = secondRoundBet[1];
+        await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
+        const secondRoundBetEquity = secondRoundBet[2];
+        await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("2.5"));
+    });
 
-    // it("fail bets on different fighters, same round", async function() {
-    //     const fighterOneID = 24;
-    //     const fighterTwoID = 16;
-    //     await fightClub.connect(accounts[0]).setConfig(true, 0);
+    it("fail bets on different fighters, same round", async function() {
+        const fighterOneID = 24;
+        const fighterTwoID = 16;
+        await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-    //     await fightClub.connect(accounts[1]).placeBet(fighterOneID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     });
-    //     const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
-    //     const firstRoundBetAmount = firstRoundBet[1];
-    //     await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
-    //     const firstRoundBetEquity = firstRoundBet[2];
-    //     await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
-    //     await expect(fightClub.connect(accounts[1]).placeBet(fighterTwoID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     })).to.be.revertedWith('Cannot change fighters');
-    // });
+        await fightClub.connect(accounts[1]).placeBet(fighterOneID, {
+            value: ethers.utils.parseEther("1.0")
+        });
+        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+        const firstRoundBetAmount = firstRoundBet[1];
+        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+        const firstRoundBetEquity = firstRoundBet[2];
+        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
+        await expect(fightClub.connect(accounts[1]).placeBet(fighterTwoID, {
+            value: ethers.utils.parseEther("1.0")
+        })).to.be.revertedWith('Cannot change fighters');
+    });
 
-    // it("fail bet our fighter is dead", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(true, 1)
-    //     const onlyOurFighterDead = parseInt("11111111011111111111111111111111", 2);
+    it("fail bet our fighter is dead", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 1)
+        const onlyOurFighterDead = parseInt("11111111011111111111111111111111", 2);
 
-    //     await fightClub.connect(accounts[0])
-    //     .setBracketStatus(
-    //         onlyOurFighterDead, 
-    //         allFightersAliveTranche,
-    //         allFightersAliveTranche,
-    //         allFightersAliveTranche);
-    //     await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     })).to.be.revertedWith('Fighter is eliminated');
-    // });
+        await fightClub.connect(accounts[0])
+        .setBracketStatus(
+            onlyOurFighterDead, 
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche());
+        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        })).to.be.revertedWith('Fighter is eliminated');
+    });
 
-    // it("bet succeeds even if other fighters are dead", async function() {
-    //     const fighterID = 24
-    //     await fightClub.connect(accounts[0]).setConfig(true, 1)
-    //     const onlyOurFighterDead = parseInt("11111111111111011111111111111111", 2);
+    it("bet succeeds even if other fighters are dead", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 1)
+        const onlyOurFighterDead = parseInt("11111111111111011111111111111111", 2);
 
-    //     await fightClub.connect(accounts[0])
-    //     .setBracketStatus(
-    //         onlyOurFighterDead, 
-    //         allFightersAliveTranche, 
-    //         allFightersAliveTranche, 
-    //         allFightersAliveTranche);
-    //     await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-    //         value: ethers.utils.parseEther("1.0")
-    //     }));
-    // });
+        await fightClub.connect(accounts[0])
+        .setBracketStatus(
+            onlyOurFighterDead, 
+            allFightersAliveTranche(), 
+            allFightersAliveTranche(), 
+            allFightersAliveTranche());
+        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        }));
+    });
 });
 
 const mineUntil = async function (blockNum) {
@@ -369,6 +386,20 @@ const mineUntil = async function (blockNum) {
         await ethers.provider.send('evm_mine');
         currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
     }
+}
+
+const allFightersAliveTranche = function () {
+    
+    bracketStatus = "";
+    const zeroPad = (num, places) => String(num).padStart(places, '0');
+    let bn_two = new BigNumber("111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111", 2);
+    for (let k = 0; k < bn_two.c.length; k++) {
+        if (k > 0)
+            bracketStatus += zeroPad(bn_two.c[k].toString(), 14);
+        else
+            bracketStatus += bn_two.c[k].toString();
+    }
+    return bracketStatus;
 }
 
 // Notes
