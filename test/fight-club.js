@@ -118,7 +118,7 @@ describe("FightClub", function() {
     });
 
     it("successfully redeem bet after winning tournament", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 0)
         const betAmount = 69
         await fightClub.connect(accounts[1]).placeBet((fighterID), {
@@ -130,7 +130,7 @@ describe("FightClub", function() {
 
         await fightClub.connect(accounts[0]).setConfig(false, 10);
 
-        const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(24);
+        const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(fighterID);
         await fightClub
             .setBracketStatus(
                 winningBracket,
@@ -148,11 +148,11 @@ describe("FightClub", function() {
     });
 
     it("successfully redeem bet after winning tournament, with multiple bettors on different rounds", async function() {
-        const fighterID = 24
+        const fighterID = 232
 
         const winningBracket = await fightClub
             .connect(accounts[0])
-            .bracketWithOnlyFighterAlive(24);
+            .bracketWithOnlyFighterAlive(fighterID);
         await fightClub.connect(accounts[0])
             .setBracketStatus(
                 winningBracket,
@@ -240,7 +240,7 @@ describe("FightClub", function() {
     });
 
     it("fail bet if betting is closed", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(false, 0)
         await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
             value: ethers.utils.parseEther("1.0")
@@ -248,7 +248,7 @@ describe("FightClub", function() {
     });
  
     it("successfully place bet", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 0)
         await fightClub.connect(accounts[1]).placeBet((fighterID),{
             value: ethers.utils.parseEther("1.0")
@@ -259,7 +259,7 @@ describe("FightClub", function() {
     });
 
     it("place two successful bets on same fighter, same round", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 0);
 
         await fightClub.connect(accounts[1]).placeBet(fighterID, {
@@ -275,7 +275,7 @@ describe("FightClub", function() {
 
     it("place two successful bets on same fighter, different rounds", async function() {
         
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 0);
 
         await fightClub.connect(accounts[1]).placeBet(fighterID, {
@@ -307,7 +307,7 @@ describe("FightClub", function() {
     });
 
     it("place two successful bets on same fighter, same round", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 0);
 
         await fightClub.connect(accounts[1]).placeBet(fighterID, {
@@ -348,7 +348,7 @@ describe("FightClub", function() {
     });
 
     it("fail bet our fighter is dead", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 1)
         const onlyOurFighterDead = parseInt("11111111011111111111111111111111", 2);
 
@@ -364,7 +364,7 @@ describe("FightClub", function() {
     });
 
     it("bet succeeds even if other fighters are dead", async function() {
-        const fighterID = 24
+        const fighterID = 232
         await fightClub.connect(accounts[0]).setConfig(true, 1)
         const onlyOurFighterDead = parseInt("11111111111111011111111111111111", 2);
 
@@ -377,6 +377,27 @@ describe("FightClub", function() {
         await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
             value: ethers.utils.parseEther("1.0")
         }));
+    });
+
+    it("emergency withdrawal succeeds in case of contract failure", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(false, 1)
+        await fightClub.connect(accounts[0])
+        .setBracketStatus(
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche(),
+            allFightersAliveTranche());
+        await fightClub.connect(accounts[0]).setConfig(true, 1);
+        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: ethers.utils.parseEther("1.0")
+        }));
+        await fightClub.connect(accounts[0]).setConfig(false, 2);
+        await expect(fightClub.connect(accounts[1]).emergencyWithdrawal()).to.be.revertedWith(
+            "Must be in error state"
+        );
+        await fightClub.connect(accounts[0]).setConfigError(true);
+        await expect(await fightClub.connect(accounts[1]).emergencyWithdrawal()).to.changeEtherBalance(accounts[1], '1000000000000000000');
     });
 });
 
