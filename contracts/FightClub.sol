@@ -245,7 +245,7 @@ contract FightClub {
     }
 
     function addRandomness(uint128 _random) public {
-        require(block.number % 5 == 0 || config.bettingIsOpen, 'Blocknum not divisible by 5');
+        require(block.number % 5 == 0 || config.bettingIsOpen, 'Blocknum not divisible by 5 or betting is not open.');
         require(_random > 1, 'Multiplier less than 2');
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
