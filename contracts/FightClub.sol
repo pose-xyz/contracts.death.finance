@@ -7,8 +7,6 @@ pragma solidity >= 0.8.0;
 
 contract FightClub {
 
-    // TODO: Figure out fighter registration
-
     address internal controller;
     uint constant BOUTS = 10;
     uint internal elementsMatrix;
@@ -228,12 +226,12 @@ contract FightClub {
     }
 
     function setNewBetProperties(FighterBet storage _bet, uint80 newBetAmount) internal {
-            uint8 roundDifference = config.currentRound - _bet.lastRoundUpdated;
-            // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
-            _bet.equityOfAmount *= uint80(2**roundDifference);
-            _bet.equityOfAmount += newBetAmount;
-            _bet.amount += newBetAmount;
-            _bet.lastRoundUpdated = config.currentRound;
+        uint8 roundDifference = config.currentRound - _bet.lastRoundUpdated;
+        // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
+        _bet.equityOfAmount *= uint80(2**roundDifference);
+        _bet.equityOfAmount += newBetAmount;
+        _bet.amount += newBetAmount;
+        _bet.lastRoundUpdated = config.currentRound;
     }
 
     function getBet() external view returns (uint16, uint80, uint80, uint8) {
