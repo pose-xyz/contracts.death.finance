@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const BigNumber = require('bignumber.js');
+const exampleBracket = require('./example-bracket.json');
 
 describe("FightClub", function() {
     let network;
@@ -32,7 +33,7 @@ describe("FightClub", function() {
                 "193660831688735064581587655956512620320321525841920",
                 accounts[0].address,
                 verifySignature.address,
-                "0xB3B3886F389F27BC1F2A41F0ADD45A84453F0D2A877FCD1225F13CD95953A86A"
+                ethers.utils.solidityKeccak256([ "string" ], [ JSON.stringify(exampleBracket) ])
             );
     });
 
