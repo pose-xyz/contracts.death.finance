@@ -7,8 +7,6 @@ pragma solidity >= 0.8.0;
 
 contract FightClub {
 
-    // TODO: Figure out fighter registration
-
     address internal controller;
     uint constant BOUTS = 10;
     uint internal elementsMatrix;
@@ -310,7 +308,6 @@ contract FightClub {
                 eventLog = (eventLog << 1) + ((uint256(keccak256(abi.encodePacked(_random, randomNumber))) % 2) == 0 ? 0 : 1);
             }
         }
-
         return (eventLog);
     }
 
@@ -318,17 +315,17 @@ contract FightClub {
         Bout memory bout = createBout(_attacker, _defender, _randomNumber);
 
         if (bout.counter > bout.attack) {
-            if (_defender.specialDefense > 0)
+            if (_defender.specialDefense > 0 && _attacker.specialDefense > 0) 
                 _attacker.specialDefense = ((bout.counter - bout.attack) > bout.attackerDefense) ? 0 : bout.attackerDefense - (bout.counter - bout.attack);
-            else
+            else if (_defender.specialDefense == 0 && _attacker.specialDefense == 0) 
                 _attacker.defense = ((bout.counter - bout.attack) > bout.attackerDefense) ? 0 : bout.attackerDefense - (bout.counter - bout.attack);
         } else if (bout.counter < bout.attack) {
-            if (_defender.specialDefense > 0)
+            if (_defender.specialDefense > 0) 
                 _defender.specialDefense = (bout.attack > bout.defenderDefense) ? 0 : bout.defenderDefense - bout.attack;
-            else
+            else 
                 _defender.defense = (bout.attack > bout.defenderDefense) ? 0 : bout.defenderDefense - bout.attack;
         }
-
+        
         _eventLog = (_eventLog << 8) + (bout.attack << 4) + bout.counter;
         return (_attacker, _defender, _eventLog, bout.isCritical, uint256(keccak256(abi.encodePacked(_random, _randomNumber))));
     }
@@ -350,20 +347,22 @@ contract FightClub {
             bout.attackerDefense = _attacker.defense;
             bout.defenderDefense = _defender.defense;
         }
-        bout.attack = uint8(_randomNumber % (elementIsStrong(bout.attackerElement, bout.defenderElement) ? (bout.attackerAttack * 2) + 1 : bout.attackerAttack + 1));
+        bout.attack = uint8(_randomNumber % (elementIsStrong(bout.attackerElement, bout.defenderElement) ? (bout.attackerAttack * 2) : bout.attackerAttack));
+        uint8 maxHit = 15 > bout.attackerAttack * 2 ? bout.attackerAttack * 2 : 15;
         bout.attack = bout.attack > 15 ? 15 : bout.attack;
-        bout.isCritical = elementIsStrong(bout.attackerElement, bout.defenderElement) ? bout.attack == (bout.attackerAttack * 2) : bout.attack == bout.attackerAttack;
+        bout.isCritical = elementIsStrong(bout.attackerElement, bout.defenderElement) ? bout.attack == maxHit : bout.attack == bout.attackerAttack;
+
         if (elementIsWeak(bout.attackerElement, bout.defenderElement))
-            bout.counter = uint8(uint256(keccak256(abi.encodePacked(random, _randomNumber))) % bout.defenderAttack + 1);
+            bout.counter = uint8(uint256(keccak256(abi.encodePacked(random, _randomNumber))) % bout.attackerAttack);
         return bout;
     }
 
     function elementIsStrong(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
-        return (elementsMatrix >> (_elementTwo * 13 + _elementOne)) & 1 > 0;
+        return (elementsMatrix >> (_elementOne * 13 + _elementTwo)) & 1 > 0;
     }
 
     function elementIsWeak(uint8 _elementOne, uint8 _elementTwo) internal view returns (bool) {
-        return (elementsMatrix >> (_elementOne * 13 + _elementTwo)) & 1 > 0;
+        return (elementsMatrix >> (_elementTwo * 13 + _elementOne)) & 1 > 0;
     }
 
     function redeemFighterBounty(bytes memory _signature) external {

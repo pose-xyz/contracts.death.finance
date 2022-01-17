@@ -6,7 +6,7 @@ describe("FightClub", function() {
     let network;
     let accounts;
     let fightClub;
-    const simulatedEventLog = "11010100000000000001001000000011100000001100001001000000001000001010100000000100001010100001";
+    const simulatedEventLog = "11001000000010000001010000000010100001011000000000100001001000000000100001001100000001100001";
 
     this.timeout(120000);
 
@@ -16,17 +16,17 @@ describe("FightClub", function() {
 
         const VerifySignature = await ethers.getContractFactory("VerifySignature");
         if (network.name == 'kovan')
-            verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+            verifySignature = await VerifySignature.attach("0x2087de4Cc539E1545F63794166AcF53E3cD8829E");
         else if (network.name == 'goerli')
-            verifySignature = await VerifySignature.attach("0xB4615f9A9eAd41FB83195C734c0a3535462Ad3B4");
+            verifySignature = await VerifySignature.attach("0x2087de4Cc539E1545F63794166AcF53E3cD8829E");
         else
             verifySignature = await VerifySignature.deploy();
 
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0xD03D6cF8920c5fe830476dFa3A738B055b30dE81");
+            fightClub = await FightClub.attach("0x4B09C49022529EbA8524761d283863adA05861c1");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0xD03D6cF8920c5fe830476dFa3A738B055b30dE81");
+            fightClub = await FightClub.attach("0x4B09C49022529EbA8524761d283863adA05861c1");
         else
             fightClub = await FightClub.deploy(
                 "193660831688735064581587655956512620320321525841920",
@@ -96,7 +96,7 @@ describe("FightClub", function() {
 
         eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
         const EVENT_SIZE = 9;
-        eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
+        eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
         let isTie = (eventLog.length % EVENT_SIZE) == 1;
         
         for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
@@ -105,7 +105,8 @@ describe("FightClub", function() {
         console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
 
         eventLog = await fightClub.connect(accounts[1]).fight(true, fighterOneStats, fighterTwoStats, '47253922380151261668899214344815469786', 31);
-        eventLog = BigInt(ethers.utils.formatEther(eventLog).toString().replace(".", "")).toString(2);
+        eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
+        console.log(eventLog);
         isTie = (eventLog.length % EVENT_SIZE) == 1;
         await expect(eventLog).to.equal(simulatedEventLog);
         
@@ -433,10 +434,10 @@ const allFightersAliveTranche = function () {
 
 // (Flip this and get 193660831688735064581587655956512620320321525841920)
 
-// // For Verifying Element Boost
+// For Verifying Element Boost
 // for(let i = 0; i < 13; i++) {
 //     for(let j = 0; j < 13; j++) {
-//         let powerUp = await fight.elementIsStrong(i, j);
+//         let powerUp = await fightClub.connect(accounts[0]).elementIsStrong(i, j);
 //         console.log(`${i},${j}: ${powerUp}`);
 //     }
 // }
@@ -449,3 +450,8 @@ const allFightersAliveTranche = function () {
 // 0000     = 0-15 element
 // 0111 1111 1100 0111 1111 1010 (Example)
 // 0111 1111 1011 0111 1110 0111 (Example)
+
+// let fighterOneStats = 6250441;
+// let fighterTwoStats = 6250426;
+// 010111110101111111001001
+// 010111110101111110111010
