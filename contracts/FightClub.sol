@@ -54,10 +54,10 @@ contract FightClub {
     struct Fighter {
         bool isTurn;
         uint8 specialElement;
-        uint8 specialDefense;
+        uint8 defense;
         uint8 specialAttack;
         uint8 element;
-        uint8 defense;
+        uint8 health;
         uint8 attack;
     }
 
@@ -69,8 +69,8 @@ contract FightClub {
         uint8 defenderElement;
         uint8 attackerAttack;
         uint8 defenderAttack;
-        uint8 attackerDefense;
-        uint8 defenderDefense;
+        uint8 attackerHealth;
+        uint8 defenderHealth;
     }
 
     event Winner(uint24 _winner);
@@ -278,19 +278,19 @@ contract FightClub {
         Fighter memory fighterTwo;
         fighterTwo.element = uint8(_fighterTwo & 15);
         fighterTwo.specialElement = uint8((_fighterTwo >> 4) & 15);
-        fighterTwo.defense = uint8((_fighterTwo >> 8) & 15);
+        fighterTwo.health = uint8((_fighterTwo >> 8) & 15);
         fighterTwo.attack = uint8((_fighterTwo >> 12) & 15);
-        fighterTwo.specialDefense = uint8((_fighterTwo >> 16) & 15);
+        fighterTwo.defense = uint8((_fighterTwo >> 16) & 15);
         fighterTwo.specialAttack = uint8((_fighterTwo >> 20) & 15);
 
         Fighter memory fighterOne;
         fighterOne.element = uint8(_fighterOne & 15);
         fighterOne.specialElement = uint8((_fighterOne >> 4) & 15);
-        fighterOne.defense = uint8((_fighterOne >> 8) & 15);
+        fighterOne.health = uint8((_fighterOne >> 8) & 15);
         fighterOne.attack = uint8((_fighterOne >> 12) & 15);
-        fighterOne.specialDefense = uint8((_fighterOne >> 16) & 15);
+        fighterOne.defense = uint8((_fighterOne >> 16) & 15);
         fighterOne.specialAttack = uint8((_fighterOne >> 20) & 15);
-        fighterOne.isTurn = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
+        fighterOne.isTurn = (fighterOne.defense + fighterOne.specialAttack + fighterOne.health + fighterOne.attack) <= (fighterTwo.defense + fighterTwo.specialAttack + fighterTwo.health + fighterTwo.attack);
         
         bool shouldSkip;
         uint128 eventLog = 1;
@@ -303,8 +303,8 @@ contract FightClub {
             } else {
                 (fighterTwo, fighterOne, eventLog, shouldSkip, randomNumber) = attack(fighterTwo, fighterOne, eventLog, randomNumber, _random);
             }
-            if (fighterOne.defense == 0 || fighterTwo.defense == 0) {
-                eventLog = (eventLog << 1) + (fighterTwo.defense == 0 ? 0 : 1);
+            if (fighterOne.health == 0 || fighterTwo.health == 0) {
+                eventLog = (eventLog << 1) + (fighterTwo.health == 0 ? 0 : 1);
                 break;
             }
             if (!shouldSkip) {
@@ -312,7 +312,7 @@ contract FightClub {
                 fighterTwo.isTurn = !fighterTwo.isTurn;
             }
             if (b == 9) {
-                eventLog = (eventLog << 1) + ((uint256(keccak256(abi.encodePacked(_random, randomNumber))) % 2) == 0 ? 0 : 1);
+                eventLog = (eventLog << 1) + fighterOne.health == fighterTwo.health ? ((uint256(keccak256(abi.encodePacked(_random, randomNumber))) % 2) == 0 ? 0 : 1) : fighterOne.health > fighterTwo.health ? 0 : 1;
             }
         }
         return (eventLog);
@@ -322,15 +322,15 @@ contract FightClub {
         Bout memory bout = createBout(_attacker, _defender, _randomNumber);
 
         if (bout.counter > bout.attack) {
-            if (_defender.specialDefense > 0 && _attacker.specialDefense > 0) 
-                _attacker.specialDefense = ((bout.counter - bout.attack) > bout.attackerDefense) ? 0 : bout.attackerDefense - (bout.counter - bout.attack);
-            else if (_defender.specialDefense == 0 && _attacker.specialDefense == 0) 
-                _attacker.defense = ((bout.counter - bout.attack) > bout.attackerDefense) ? 0 : bout.attackerDefense - (bout.counter - bout.attack);
+            if (_defender.defense > 0 && _attacker.defense > 0) 
+                _attacker.defense = ((bout.counter - bout.attack) > bout.attackerHealth) ? 0 : bout.attackerHealth - (bout.counter - bout.attack);
+            else if (_defender.defense == 0 && _attacker.defense == 0) 
+                _attacker.health = ((bout.counter - bout.attack) > bout.attackerHealth) ? 0 : bout.attackerHealth - (bout.counter - bout.attack);
         } else if (bout.counter < bout.attack) {
-            if (_defender.specialDefense > 0) 
-                _defender.specialDefense = (bout.attack > bout.defenderDefense) ? 0 : bout.defenderDefense - bout.attack;
+            if (_defender.defense > 0) 
+                _defender.defense = (bout.attack > bout.defenderHealth) ? 0 : bout.defenderHealth - bout.attack;
             else 
-                _defender.defense = (bout.attack > bout.defenderDefense) ? 0 : bout.defenderDefense - bout.attack;
+                _defender.health = (bout.attack > bout.defenderHealth) ? 0 : bout.defenderHealth - bout.attack;
         }
         
         _eventLog = (_eventLog << 8) + (bout.attack << 4) + bout.counter;
@@ -339,20 +339,20 @@ contract FightClub {
 
     function createBout(Fighter memory _attacker, Fighter memory _defender, uint256 _randomNumber) internal view returns(Bout memory) {
         Bout memory bout;
-        if (_defender.specialDefense > 0) {
+        if (_defender.defense > 0) {
             bout.attackerElement = _attacker.specialElement;
             bout.defenderElement = _defender.specialElement;
             bout.attackerAttack = _attacker.specialAttack;
             bout.defenderAttack = _defender.specialAttack;
-            bout.attackerDefense = _attacker.specialDefense;
-            bout.defenderDefense = _defender.specialDefense;
+            bout.attackerHealth = _attacker.defense;
+            bout.defenderHealth = _defender.defense;
         } else {
             bout.attackerElement = _attacker.element;
             bout.defenderElement = _defender.element;
             bout.attackerAttack = _attacker.attack;
             bout.defenderAttack = _defender.attack;
-            bout.attackerDefense = _attacker.defense;
-            bout.defenderDefense = _defender.defense;
+            bout.attackerHealth = _attacker.health;
+            bout.defenderHealth = _defender.health;
         }
         bout.attack = uint8(_randomNumber % (elementIsStrong(bout.attackerElement, bout.defenderElement) ? (bout.attackerAttack * 2) : bout.attackerAttack));
         uint8 maxHit = 15 > bout.attackerAttack * 2 ? bout.attackerAttack * 2 : 15;
