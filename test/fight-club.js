@@ -25,9 +25,9 @@ describe("FightClub", function() {
 
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0x887b7132bA90851596fF87056F44579832452a28");
+            fightClub = await FightClub.attach("0xfE891216cFa520997271ad892833b514b9422AF5");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0x887b7132bA90851596fF87056F44579832452a28");
+            fightClub = await FightClub.attach("0xfE891216cFa520997271ad892833b514b9422AF5");
         else
             fightClub = await FightClub.deploy(
                 "193660831688735064581587655956512620320321525841920",

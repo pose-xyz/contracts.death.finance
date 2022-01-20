@@ -312,7 +312,7 @@ contract FightClub {
                 fighterTwo.isTurn = !fighterTwo.isTurn;
             }
             if (b == 9) {
-                eventLog = (eventLog << 1) + fighterOne.health == fighterTwo.health ? ((uint256(keccak256(abi.encodePacked(_random, randomNumber))) % 2) == 0 ? 0 : 1) : fighterOne.health > fighterTwo.health ? 0 : 1;
+                eventLog = fighterOne.health == fighterTwo.health ? ((eventLog << 1) + ((uint256(keccak256(abi.encodePacked(_random, randomNumber))) % 2) == 0 ? 0 : 1)) : fighterOne.health > fighterTwo.health ? ((eventLog << 1) + 0) : ((eventLog << 1) + 1);
             }
         }
         return (eventLog);
