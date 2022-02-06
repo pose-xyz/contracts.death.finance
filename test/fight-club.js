@@ -18,6 +18,14 @@ describe("FightClub", function() {
     let fightClub;
     const simulatedEventLog = "11000100000001000001001000000011100001010100000010100000";
 
+    const firstRoundFighters    = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111111";
+    const secondRoundFighters   = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111";
+    const thirdRoundFighters    = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111";
+    const fourthRoundFighters   = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011";
+    const fifthRoundFighters    = "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001";
+    const brackets = [firstRoundFighters, secondRoundFighters, thirdRoundFighters, fourthRoundFighters, fifthRoundFighters];
+
+
     this.timeout(6000000);
 
     beforeEach(async () => {
@@ -38,21 +46,22 @@ describe("FightClub", function() {
 
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0xc16e8A86E3834E04AfFADC3bFDFD3FA502190c1B");
+            fightClub = await FightClub.attach("0xeB069B764DB9081b8eCc081D7EF25212D8aE2eb1");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0xc16e8A86E3834E04AfFADC3bFDFD3FA502190c1B");
+            fightClub = await FightClub.attach("0xeB069B764DB9081b8eCc081D7EF25212D8aE2eb1");
         else
             fightClub = await FightClub.deploy(
                 "193660831688735064581587655956512620320321525841920",
                 accounts[0].address,
                 verifySignature.address,
+                10,
                 ethers.utils.solidityKeccak256([ "string" ], [ JSON.stringify(exampleBracket) ])
             );
     });
 
 
 
-    describe("Testnet", function() {
+    describe("FightClub", function() {
 
         it("testnet: Fight", async function() {
 
@@ -85,19 +94,19 @@ describe("FightClub", function() {
                     "Multiplier less than 2"
                 );
     
-                await mineUntil(12);
+                await mineUntilBlock(12);
     
                 await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
                     "Blocknum has odd tens digit or betting is not open."
                 );
     
-                await mineUntil(20);
+                await mineUntilBlock(20);
                 
                 await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('0');
                 await fightClub.connect(accounts[1]).addRandomness(2423432, { gasPrice: 2000000000, gasLimit: 85000 });
                 await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('1');
     
-                await mineUntil(25);
+                await mineUntilBlock(25);
     
                 await expect(fightClub.connect(accounts[1]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
                     "Must be called by controller"
@@ -107,7 +116,7 @@ describe("FightClub", function() {
                     "Blocknum has even tens digit"
                 );
     
-                await mineUntil(36);
+                await mineUntilBlock(36);
     
                 eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
                 const EVENT_SIZE = 9;
@@ -136,9 +145,9 @@ describe("FightClub", function() {
         it("testnet: successfully redeem bet after winning tournament", async function() {
             
             if (!isGoerli) {
-                const fighterID = 232
+                const fighterID = 1023
                 await fightClub.connect(accounts[0]).setConfig(true, 0)
-                const betAmount = 69
+                const betAmount = ethers.utils.parseEther("0.001")
                 await fightClub.connect(accounts[1]).placeBet((fighterID), {
                     value: betAmount
                 });
@@ -146,18 +155,22 @@ describe("FightClub", function() {
                 const amount = await fightClub.connect(accounts[1]).getBet();
                 await expect(amount[1]).to.equal(betAmount);
 
+                await fightClub.connect(accounts[0]).setConfig(false, 9);
+                await expect(fightClub.connect(accounts[1]).redeemPot()).to.be.revertedWith('Must be last round');
                 await fightClub.connect(accounts[0]).setConfig(false, 10);
 
                 const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(fighterID);
                 await fightClub
                     .setBracketStatus(
-                        winningBracket,
                         0,
                         0,
-                        0);
-
+                        0,
+                        winningBracket);
+                
                 const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
                 expect(totalBets).to.equal(betAmount);
+
+                console.log(await fightClub.connect(accounts[0]).getConfig())
 
                 await fightClub.connect(accounts[1]).redeemPot();
                 const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
@@ -461,29 +474,179 @@ describe("FightClub", function() {
             }
         });
 
-
-        it("goerli: successfully update contract randomness", async function() {
+        it("testnet: getBracketStatus", async function() {
             
             if (isGoerli) {
-
-                let currentBlock = await goerliMineUntil(true);
-                const originalUserRandomness = (await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString();
-                const originalRandomness = (await fightClub.connect(accounts[1]).getRandomness()).toString();
-                await fightClub.connect(accounts[1]).addRandomness(2423432, { gasPrice: 2000000000, gasLimit: 85000 });
+                let bracketStatus = await fightClub.connect(accounts[0]).getBracketStatus();
+                await expect(bracketStatus[0]).to.equal("0");
+                await fightClub.connect(accounts[0]).setBracketStatus(
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche());
+                let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
                 await goerliMineUntilBlock(currentBlock.number + 5);
-                const updatedUserRandomness = (await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString();
-                const updatedRandomness = (await fightClub.connect(accounts[1]).getRandomness()).toString();
-                await expect(originalUserRandomness).to.not.equal(updatedUserRandomness);
-                await expect(originalRandomness).to.not.equal(updatedRandomness);
-    
+                bracketStatus = await fightClub.connect(accounts[0]).getBracketStatus();
+                await expect(bracketStatus[0]).to.equal("57896044618658097711785492504343953926634992332820282019728792003956564819967");
+                await fightClub.connect(accounts[0]).setBracketStatus(
+                    0,
+                    0,
+                    0,
+                    0);
+                currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+                await goerliMineUntilBlock(currentBlock.number + 5);
+                bracketStatus = await fightClub.connect(accounts[0]).getBracketStatus();
+                await expect(bracketStatus[0]).to.equal("0");
             } else {
                 return this.skip();
             }
         });
+
+
+        // it("goerli: successfully update contract randomness", async function() {
+            
+        //     if (isGoerli) {
+        //         let currentBlock = await goerlimineUntilBlock(true);
+        //         const originalUserRandomness = (await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString();
+        //         const originalRandomness = (await fightClub.connect(accounts[1]).getRandomness()).toString();
+        //         await fightClub.connect(accounts[1]).addRandomness(2423432, { gasPrice: 2000000000, gasLimit: 85000 });
+        //         await goerliMineUntilBlock(currentBlock.number + 5);
+        //         const updatedUserRandomness = (await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString();
+        //         const updatedRandomness = (await fightClub.connect(accounts[1]).getRandomness()).toString();
+        //         await expect(originalUserRandomness).to.not.equal(updatedUserRandomness);
+        //         await expect(originalRandomness).to.not.equal(updatedRandomness);
+        //     } else {
+        //         return this.skip();
+        //     }
+        // });
+
+
+        // it("goerli: successfully update bettingIsOpen", async function() {
+            
+        //     if (isGoerli) {
+        //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+        //         const originalConfig = await fightClub.connect(accounts[0]).getConfig({ gasPrice: 2000000000, gasLimit: 85000 });
+        //         let originalBettingOpen = originalConfig[2];
+        //         let originalCurrentRound = originalConfig[3];
+        //         await fightClub.connect(accounts[0]).setConfig(!originalBettingOpen, originalCurrentRound, { gasPrice: 2000000000, gasLimit: 85000 })
+        //         await goerliMineUntilBlock(currentBlock.number + 5);
+        //         const updatedConfig = await fightClub.connect(accounts[0]).getConfig();
+        //         let updatedBettingOpen = updatedConfig[2];
+        //         let updatedCurrentRound = updatedConfig[3];
+        //         await expect(originalBettingOpen).to.not.equal(updatedBettingOpen);
+        //         await expect(originalCurrentRound).to.equal(updatedCurrentRound);
+        //     } else {
+        //         return this.skip();
+        //     }
+        // });
+
+
+        // it("goerli: successfully update bracketStatus", async function() {
+            
+        //     if (isGoerli) {
+
+        //         let bracketStatus = brackets[0];
+        //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+        //         let bracketStatusArr = [];
+        //         for (let j = 0; j < 4; j++) {
+        //             bracketStatusArr[j] = "";
+        //             let bn_two = new BigNumber(bracketStatus.substring(256*j,256*(j+1)), 2);
+        //             for (let k = 0; k < bn_two.c.length; k++) {
+        //                 if (k > 0)
+        //                     bracketStatusArr[j] += zeroPad(bn_two.c[k].toString(), 14);
+        //                 else
+        //                     bracketStatusArr[j] += bn_two.c[k].toString();
+        //             }
+        //         }
+        //         await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3]);
+        //         await goerliMineUntilBlock(currentBlock.number + 5);
+        //         const updatedConfig = await fightClub.connect(accounts[0]).getConfig();
+        //         let updatedBettingOpen = updatedConfig[2];
+        //         let updatedCurrentRound = updatedConfig[3];
+        //         await expect(originalBettingOpen).to.not.equal(updatedBettingOpen);
+        //         await expect(originalCurrentRound).to.equal(updatedCurrentRound);
+        //     } else {
+        //         return this.skip();
+        //     }
+        // });
+
+        // it("goerli: successfully run entire bracket", async function() {
+        //     const zeroPad = (num, places) => String(num).padStart(places, '0')
+        //     for (let i = 0; i < brackets.length; i++) {
+        //         let bracketStatus = brackets[i];
+        //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+        //         let bracketStatusArr = [];
+        //         for (let j = 0; j < 4; j++) {
+        //             bracketStatusArr[j] = "";
+        //             let bn_two = new BigNumber(bracketStatus.substring(256*j,256*(j+1)), 2);
+        //             for (let k = 0; k < bn_two.c.length; k++) {
+        //                 if (k > 0)
+        //                     bracketStatusArr[j] += zeroPad(bn_two.c[k].toString(), 14);
+        //                 else
+        //                     bracketStatusArr[j] += bn_two.c[k].toString();
+        //             }
+        //         }
+        //         console.log('bracketStatusArr[3]: ', bracketStatusArr[3]);
+        //         await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3], { gasPrice: 2000000000, gasLimit: 85000 });
+        //         console.log("waiting for bracket status to be set");
+        //         await goerliMineUntilBlock(currentBlock.number + 3);
+        //         await fightClub.connect(accounts[0]).setConfig(true, i, { gasPrice: 2000000000, gasLimit: 85000 });
+        //         console.log("waiting for config to be updated");
+        //         await goerliMineUntilBlock(currentBlock.number + 6);
+        //         await fightClub.connect(accounts[1]).placeBet(1023, {
+        //             value: ethers.utils.parseEther("0.001")
+        //         });
+        //         console.log("waiting for bet to be placed");
+        //         await goerliMineUntilBlock(currentBlock.number + 9);
+        //         await fightClub.connect(accounts[0]).setConfig(false, i+1, { gasPrice: 2000000000, gasLimit: 85000 });
+        //         await goerliMineUntilBlock(currentBlock.number + 12);
+        //     }
+        //     let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
+        //     console.log(`Fighter ${winner} Won the Bracket!`);
+        // });
+
+
+        // it("goerli: debug contract", async function() {
+            
+        //     if (isGoerli) {
+        //         let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+        //         const originalConfig = await fightClub.connect(accounts[0]).getConfig({ gasPrice: 2000000000, gasLimit: 85000 });
+        //         console.log('originalConfig: ', originalConfig);
+        //         const bracketStatus = await fightClub.connect(accounts[0]).getBracketStatus();
+        //         console.log('bracketStatus: ', bracketStatus);
+        //         const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+        //         console.log('totalBets: ', totalBets);
+        //         let userBet = await fightClub.connect(accounts[1]).getBet();
+        //         console.log('userBet: ', userBet);
+        //         await fightClub.connect(accounts[1]).placeBet(100, {
+        //             value: ethers.utils.parseEther("0.001")
+        //         });
+        //         await goerliMineUntilBlock(currentBlock.number + 3);
+        //         userBet = await fightClub.connect(accounts[1]).getBet();
+        //         console.log('userBet: ', userBet);
+        //         await fightClub.connect(accounts[0]).setBracketStatus(
+        //             allFightersAliveTranche(),
+        //             allFightersAliveTranche(),
+        //             allFightersAliveTranche(),
+        //             allFightersAliveTranche());
+        //         await goerliMineUntilBlock(currentBlock.number + 3);
+        //         await fightClub.connect(accounts[0]).setConfig(true, 0, { gasPrice: 2000000000, gasLimit: 85000 });
+        //         await goerliMineUntilBlock(currentBlock.number + 3);
+        //         await fightClub.connect(accounts[1]).placeBet(1023, {
+        //             value: ethers.utils.parseEther("0.001"),
+        //             gasPrice: 2000000000, 
+        //             gasLimit: 85000
+        //         });
+        //         await goerliMineUntilBlock(currentBlock.number + 6);
+        //         console.log('originalConfig: ', (await fightClub.connect(accounts[0]).getConfig({ gasPrice: 2000000000, gasLimit: 85000 })));
+        //     } else {
+        //         return this.skip();
+        //     }
+        // });
     });
 });
 
-const mineUntil = async function (blockNum) {
+const mineUntilBlock = async function (blockNum) {
     let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
     while (currentBlock.number % blockNum != 0) {
         await ethers.provider.send('evm_mine');
