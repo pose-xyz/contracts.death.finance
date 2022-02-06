@@ -12,18 +12,18 @@ contract FightClub {
     uint internal random;
     mapping(uint => BracketStatus) internal roundBracketStatus;
 
-    mapping(address => FighterBet) internal bets;
-    mapping(address => uint80) internal bettorTotalContributions;
+    mapping(address => FighterStake) internal stakes;
+    mapping(address => uint80) internal stakerTotalContributions;
     mapping(address => uint) internal userTotalChaos;
-    mapping(uint16 => FighterBet) internal fighterTotalPots;
+    mapping(uint16 => FighterStake) internal fighterTotalPots;
 
     Config internal config;
 
     struct Config {
-        // Betting is open before a round has begun and after the round has completed.
+        // Staking is open before a round has begun and after the round has completed.
         bool isError;
         bool fighterRedeemed;
-        bool bettingIsOpen;
+        bool stakingIsOpen;
         uint8 currentRound;
         uint8 rounds;
         uint24 winningFighterIdentifier;
@@ -35,7 +35,7 @@ contract FightClub {
         bytes32 provenanceHash;
     }
 
-    struct FighterBet {
+    struct FighterStake {
         bool isRedeemed;
         uint8 lastRoundUpdated;
         uint16 fighterIdentifier;
@@ -86,16 +86,16 @@ contract FightClub {
         config.provenanceHash = _provenanceHash;
     }
 
-    function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
+    function setConfig(bool _stakingIsOpen, uint8 _currentRound) external {
         require(msg.sender == controller, 'Must be called by controller');
         require(_currentRound >= config.currentRound, 'Requires greater current round');
         require(config.currentRound < config.rounds, 'Tournament is over!');
-        config.bettingIsOpen = _bettingIsOpen;
+        config.stakingIsOpen = _stakingIsOpen;
         config.currentRound = _currentRound;
     }
 
     function getConfig() view external returns (bool, bool, bool, uint8, uint24, address, address, uint, uint, uint, bytes32) {
-        return (config.isError, config.fighterRedeemed, config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.signerAddress, config.verifySignatureAddress, config.pot, config.potHighWaterMark, config.winningFighterOwnerPayout, config.provenanceHash);
+        return (config.isError, config.fighterRedeemed, config.stakingIsOpen, config.currentRound, config.winningFighterIdentifier, config.signerAddress, config.verifySignatureAddress, config.pot, config.potHighWaterMark, config.winningFighterOwnerPayout, config.provenanceHash);
     }
 
     function setConfigError(bool _isError) external {
@@ -132,7 +132,7 @@ contract FightClub {
         return 1 << (fighterNum - 1);
     }
 
-    function getEquityForBet(uint80 _equity, uint8 _lastRoundUpdated) public view returns (uint80) {
+    function getEquityForStake(uint80 _equity, uint8 _lastRoundUpdated) public view returns (uint80) {
         uint8 roundDifference = config.currentRound - _lastRoundUpdated;
         uint80 multiplier = uint80(2) ** roundDifference;
         return _equity * multiplier;
@@ -183,7 +183,7 @@ contract FightClub {
     }
 
     function getFighterTotalPot(uint16 _fighterIdentifier) public view returns (uint8, uint80, uint80) {
-        FighterBet storage pot = fighterTotalPots[_fighterIdentifier];
+        FighterStake storage pot = fighterTotalPots[_fighterIdentifier];
         return (
             pot.lastRoundUpdated,
             pot.amount,
@@ -191,65 +191,65 @@ contract FightClub {
         );
     }
     
-    function placeBet(uint16 _fighterIdentifier) external payable {
-        require(msg.value > 0, 'Must place a bet higher than zero');
-        require(config.bettingIsOpen, 'Betting is not open; we are mid-round');
+    function placeStake(uint16 _fighterIdentifier) external payable {
+        require(msg.value > 0, 'Must place a stake higher than zero');
+        require(config.stakingIsOpen, 'Staking is not open; we are mid-round');
 
         if (config.currentRound != 0) {
             // This check isn't needed in first round, because all fighters are alive.
             require(isFighterAlive(_fighterIdentifier), 'Fighter is eliminated');
         }
         
-        FighterBet storage existingBet = bets[msg.sender];
-        bool hasExistingBet = existingBet.amount > 0;
-        bool previousFighterStillAlive = hasExistingBet && (isFighterAlive(existingBet.fighterIdentifier) || config.currentRound == 0);
+        FighterStake storage existingStake = stakes[msg.sender];
+        bool hasExistingStake = existingStake.amount > 0;
+        bool previousFighterStillAlive = hasExistingStake && (isFighterAlive(existingStake.fighterIdentifier) || config.currentRound == 0);
 
         if (previousFighterStillAlive) {
             // Don't allow them to change fighter if their fighter hasn't been eliminated
-            require(_fighterIdentifier == existingBet.fighterIdentifier, "Cannot change fighters");
+            require(_fighterIdentifier == existingStake.fighterIdentifier, "Cannot change fighters");
         }
 
-        uint80 newBetAmount = uint80(msg.value);
-        bool bettingOnNewFighter = existingBet.fighterIdentifier != _fighterIdentifier;
-        if (bettingOnNewFighter || !hasExistingBet) {
-            bets[msg.sender] = FighterBet(false, config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+        uint80 newStakeAmount = uint80(msg.value);
+        bool stakingOnNewFighter = existingStake.fighterIdentifier != _fighterIdentifier;
+        if (stakingOnNewFighter || !hasExistingStake) {
+            stakes[msg.sender] = FighterStake(false, config.currentRound, _fighterIdentifier, newStakeAmount, newStakeAmount);
         } else {
-            setNewBetProperties(existingBet, newBetAmount);
+            setNewStakeProperties(existingStake, newStakeAmount);
         }
 
         // Update total pot for fighter
-        FighterBet storage fighterTotalPot = fighterTotalPots[_fighterIdentifier];
+        FighterStake storage fighterTotalPot = fighterTotalPots[_fighterIdentifier];
         if (fighterTotalPot.amount == 0) {
-            fighterTotalPots[_fighterIdentifier] = FighterBet(false, config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+            fighterTotalPots[_fighterIdentifier] = FighterStake(false, config.currentRound, _fighterIdentifier, newStakeAmount, newStakeAmount);
         } else {
-            setNewBetProperties(fighterTotalPot, newBetAmount);
+            setNewStakeProperties(fighterTotalPot, newStakeAmount);
         }
 
         // Add randomness to fight club
         addRandomness(uint128(block.timestamp));
 
         // Update total pot
-        bettorTotalContributions[msg.sender] += newBetAmount;
-        config.pot += newBetAmount;
-        config.potHighWaterMark += newBetAmount;
+        stakerTotalContributions[msg.sender] += newStakeAmount;
+        config.pot += newStakeAmount;
+        config.potHighWaterMark += newStakeAmount;
     }
 
-    function setNewBetProperties(FighterBet storage _bet, uint80 newBetAmount) internal {
-        uint8 roundDifference = config.currentRound - _bet.lastRoundUpdated;
+    function setNewStakeProperties(FighterStake storage _stake, uint80 newStakeAmount) internal {
+        uint8 roundDifference = config.currentRound - _stake.lastRoundUpdated;
         // If in the same round, 2^0 == 1; no multiplier will be applied to equityOfAmount.
-        _bet.equityOfAmount *= uint80(2**roundDifference);
-        _bet.equityOfAmount += newBetAmount;
-        _bet.amount += newBetAmount;
-        _bet.lastRoundUpdated = config.currentRound;
+        _stake.equityOfAmount *= uint80(2**roundDifference);
+        _stake.equityOfAmount += newStakeAmount;
+        _stake.amount += newStakeAmount;
+        _stake.lastRoundUpdated = config.currentRound;
     }
 
-    function getBet() external view returns (uint16, uint80, uint80, uint8) {
-        FighterBet storage bet = bets[msg.sender];
-        return (bet.fighterIdentifier, bet.amount, bet.equityOfAmount, bet.lastRoundUpdated);
+    function getStake() external view returns (uint16, uint80, uint80, uint8) {
+        FighterStake storage stake = stakes[msg.sender];
+        return (stake.fighterIdentifier, stake.amount, stake.equityOfAmount, stake.lastRoundUpdated);
     }
 
     function addRandomness(uint128 _random) public {
-        require((block.number / 10) % 2 == 0 || config.bettingIsOpen, 'Blocknum has odd tens digit or betting is not open.');
+        require((block.number / 10) % 2 == 0 || config.stakingIsOpen, 'Blocknum has odd tens digit or staking is not open.');
         require(_random > 1, 'Multiplier less than 2');
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
         userTotalChaos[msg.sender] += 1;
@@ -393,36 +393,36 @@ contract FightClub {
 
     function redeemPot() external {
         require(config.currentRound == config.rounds, 'Must be last round');
-        FighterBet storage fighterBet = bets[msg.sender];
-        require(isFighterAlive(fighterBet.fighterIdentifier), 'Fighter is eliminated');
-        require(!fighterBet.isRedeemed, 'Bet previously redeemed');
+        FighterStake storage fighterStake = stakes[msg.sender];
+        require(isFighterAlive(fighterStake.fighterIdentifier), 'Fighter is eliminated');
+        require(!fighterStake.isRedeemed, 'Stake previously redeemed');
 
-        fighterBet.isRedeemed = true;
-        uint8 roundDifference = config.currentRound - fighterBet.lastRoundUpdated;
-        fighterBet.equityOfAmount *= uint80(2**roundDifference);
-        fighterBet.lastRoundUpdated = config.currentRound;
+        fighterStake.isRedeemed = true;
+        uint8 roundDifference = config.currentRound - fighterStake.lastRoundUpdated;
+        fighterStake.equityOfAmount *= uint80(2**roundDifference);
+        fighterStake.lastRoundUpdated = config.currentRound;
 
-        FighterBet storage fighterTotalPot = fighterTotalPots[fighterBet.fighterIdentifier];
+        FighterStake storage fighterTotalPot = fighterTotalPots[fighterStake.fighterIdentifier];
         roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
         fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
         fighterTotalPot.lastRoundUpdated = config.currentRound;
 
         console.log("In redeemPot(), fighterEquity is %s and fighterTotalEquity is %s.",
-            fighterBet.equityOfAmount,
+            fighterStake.equityOfAmount,
             fighterTotalPot.equityOfAmount);
 
         if (config.winningFighterOwnerPayout == 0) {
             setWinningFighterOwnerPayout();
         }
 
-        uint bettorsShare = (config.potHighWaterMark * fighterBet.equityOfAmount) / fighterTotalPot.equityOfAmount;
-        console.log("Transferring bettor's share of %s to bettor.", bettorsShare);
-        payable(msg.sender).transfer(bettorsShare);
-        config.pot -= bettorsShare;
-        console.log("Pot share of %s redeemed, total pot is now %s.", bettorsShare, config.pot);
+        uint stakersShare = (config.potHighWaterMark * fighterStake.equityOfAmount) / fighterTotalPot.equityOfAmount;
+        console.log("Transferring staker's share of %s to staker.", stakersShare);
+        payable(msg.sender).transfer(stakersShare);
+        config.pot -= stakersShare;
+        console.log("Pot share of %s redeemed, total pot is now %s.", stakersShare, config.pot);
     }
 
-    // 5% of the pot is left for the fighter's owner, regardless if the owner was a bettor or not.
+    // 5% of the pot is left for the fighter's owner, regardless if the owner was a staker or not.
     function setWinningFighterOwnerPayout() internal {
         uint ownersShare = config.pot / 20;
         console.log("Setting aside 5% of pot for owner, totalling %s", ownersShare);
@@ -433,8 +433,8 @@ contract FightClub {
 
     function emergencyWithdrawal() external {
         require(config.isError, 'Must be in error state');
-        uint80 bettorTotalContribution = bettorTotalContributions[msg.sender];
-        bettorTotalContributions[msg.sender] = 0;
-        payable(msg.sender).transfer(bettorTotalContribution);
+        uint80 stakerTotalContribution = stakerTotalContributions[msg.sender];
+        stakerTotalContributions[msg.sender] = 0;
+        payable(msg.sender).transfer(stakerTotalContribution);
     }
 }

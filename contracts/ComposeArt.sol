@@ -29,6 +29,7 @@ contract ComposeArt is ERC721, Ownable {
 
     // Have special saleEnd value for sales which have no intended ending.
     struct ReleaseTiming {
+        bool isOngoing;
         uint256 saleStart;
         uint256 saleEnd;
         uint256 startingIndex;
@@ -79,7 +80,7 @@ contract ComposeArt is ERC721, Ownable {
 
     // function createBaseFromWhitelist(address _to, uint32 _id, bytes memory _signature, address _signer) payable public returns (uint32) {
     //     require(config.isWhitelisted, "Config is not whitelisted.");
-    //     require(VerifySignature(config.verifySignatureAddress).verifyC(_signer, _to, _id, true, _signature), "Creator not on whitelist");
+    //     require(VerifySignature(config.verifySignatureAddress).verifyMinter(_signer, _to, _id, true, _signature), "Creator not on whitelist");
     //     require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
     //     baseOwner[config.baseCount] = _to;
     //     releaseBalance[0] = releaseBalance[0] + uint72(msg.value);
@@ -89,7 +90,7 @@ contract ComposeArt is ERC721, Ownable {
 
     function createBase() payable public returns (uint32) {
         require(!config.isWhitelisted, "Config is not whitelisted.");
-        require(msg.value >= config.baseRegistrationFee, "Not enough moneys, bb");
+        require(msg.value >= config.baseRegistrationFee, "Must include registration fee.");
         baseOwner[config.baseCount] = _msgSender();
         releaseBalance[0] = releaseBalance[0] + uint72(msg.value);
         config.baseCount = config.baseCount + 1;
@@ -103,7 +104,7 @@ contract ComposeArt is ERC721, Ownable {
     // TODO: Make this whitelisted to ensure that provenance isn't tampered with 
     // (use provenancehash + releaseid to ensure uniqueness)
     // Utilize signature verification to ensure the integrity of provenance hash
-    function createRelease(uint32 _base, bytes32 _provenanceHash, uint16 _maxPacks, uint8 _maxPackPurchase, uint64 _packPrice, uint8 _propsPerPack, uint256 _saleStart, uint256 _saleEnd, bool _isWhitelisted) public returns (uint32) {
+    function createRelease(bool _isWhitelisted, bool _isOngoing, uint32 _base, uint8 _propsPerPack, uint8 _maxPackPurchase, uint16 _maxPacks, uint64 _packPrice, uint256 _saleStart, uint256 _saleEnd, bytes32 _provenanceHash) public returns (uint32) {
         require(baseOwner[_base] == _msgSender(), "Must be owner of base.");
         Release storage release = releases[config.releaseCount];
         release.base = _base;
@@ -116,6 +117,7 @@ contract ComposeArt is ERC721, Ownable {
         release.isWhitelisted = _isWhitelisted;
 
         ReleaseTiming storage releaseTiming = releaseTimings[config.releaseCount];
+        releaseTiming.isOngoing = _isOngoing;
         releaseTiming.saleStart = _saleStart;
         releaseTiming.saleEnd = _saleEnd;
 
@@ -151,7 +153,7 @@ contract ComposeArt is ERC721, Ownable {
         require(releaseTiming.startingIndexBlock == 0, "Sale not active");
         
         if (release.isWhitelisted) {
-            require(VerifySignature(config.verifySignatureAddress).verifyC(_signer, _to, _releaseId, false, _signature), "Purchaser not on whitelist");
+            require(VerifySignature(config.verifySignatureAddress).verifyMinter(_signer, _to, _releaseId, false, _signature), "Purchaser not on whitelist");
         }
         require(_numberOfPacks <= release.maxPackPurchase, "Max pack purchase exceeded");
         require((release.packsPurchased + _numberOfPacks) <= release.maxPacks, "Not enough packs remaining");
