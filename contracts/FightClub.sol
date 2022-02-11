@@ -34,6 +34,7 @@ contract FightClub {
     }
 
     struct FighterBet {
+        bool isRedeemed;
         uint8 lastRoundUpdated;
         uint16 fighterIdentifier;
         uint80 amount;
@@ -185,7 +186,7 @@ contract FightClub {
         uint80 newBetAmount = uint80(msg.value);
         bool bettingOnNewFighter = existingBet.fighterIdentifier != _fighterIdentifier;
         if (bettingOnNewFighter || !hasExistingBet) {
-            bets[msg.sender] = FighterBet(config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+            bets[msg.sender] = FighterBet(false, config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
         } else {
             // Is adding another bet to their fighter.
             uint8 roundDifference = config.currentRound - existingBet.lastRoundUpdated;
@@ -201,7 +202,7 @@ contract FightClub {
         // Update total pot for fighter
         FighterBet storage fighterTotalPot = fighterTotalPots[_fighterIdentifier];
         if (fighterTotalPot.amount == 0) {
-            fighterTotalPots[_fighterIdentifier] = FighterBet(config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
+            fighterTotalPots[_fighterIdentifier] = FighterBet(false, config.currentRound, _fighterIdentifier, newBetAmount, newBetAmount);
         } else {
             uint8 roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
             fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
@@ -346,5 +347,25 @@ contract FightClub {
         require(VerifySignature(config.verifySignatureAddress).verifyF(config.signerAddress, msg.sender, config.winningFighterIdentifier, _signature), "Purchaser not on whitelist");
         config.fighterRedeemed = true;
         payable(msg.sender).transfer(config.pot / 20);
+    }
+
+    function redeemPot() external {
+        require(config.currentRound == BOUTS, 'Must be last round');
+
+        FighterBet storage fighterBet = bets[msg.sender];
+        require(isFighterAlive(fighterBet.fighterIdentifier), 'Fighter is eliminated');
+        require(!fighterBet.isRedeemed, 'Bet previously redeemed');
+
+        fighterBet.isRedeemed = true;
+        uint8 roundDifference = config.currentRound - fighterBet.lastRoundUpdated;
+        fighterBet.equityOfAmount *= uint80(2**roundDifference);
+        fighterBet.lastRoundUpdated = config.currentRound;
+
+        FighterBet storage fighterTotalPot = fighterTotalPots[fighterBet.fighterIdentifier];
+        roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
+        fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
+        fighterTotalPot.lastRoundUpdated = config.currentRound;
+
+        payable(msg.sender).transfer(fighterTotalPot.amount * fighterTotalPot.equityOfAmount / fighterBet.equityOfAmount);
     }
 }
