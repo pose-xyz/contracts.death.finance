@@ -82,7 +82,7 @@ contract FightClub {
         return (config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.pot);
     }
 
-    function fighterEliminated(uint16 _fighterIdentifier) view internal returns (bool) {
+    function isFighterAlive(uint16 _fighterIdentifier) view internal returns (bool) {
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         uint trancheNum = _fighterIdentifier / 256;
         uint fighterNum = _fighterIdentifier % 256;
@@ -99,8 +99,7 @@ contract FightClub {
         }
 
         uint onlySetFightersBit = 1 << (fighterNum - 1);
-        bool fighterIsAlive = (tranche & onlySetFightersBit) > 0;
-        return !fighterIsAlive;
+        return (tranche & onlySetFightersBit) > 0;
     }
 
     function evaluateWinner() view external returns (uint24) {
@@ -160,12 +159,12 @@ contract FightClub {
 
         if (config.currentRound != 0) {
             // This check isn't needed in first round, because all fighters are alive.
-            require(!fighterEliminated(_fighterIdentifier), 'Fighter is eliminated');
+            require(isFighterAlive(_fighterIdentifier), 'Fighter is eliminated');
         }
         
         FighterBet storage existingBet = bets[msg.sender];
         bool hasExistingBet = existingBet.amount > 0;
-        bool previousFighterStillAlive = hasExistingBet && !fighterEliminated(existingBet.fighterIdentifier);
+        bool previousFighterStillAlive = hasExistingBet && isFighterAlive(existingBet.fighterIdentifier);
 
         if (previousFighterStillAlive) {
             // Don't allow them to change fighter if their fighter hasn't been eliminated
