@@ -1,11 +1,11 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const BigNumber = require('bignumber.js');
 
-describe("Fight", function() {
+describe("FightClub", function() {
     let network;
     let accounts;
     let fightClub;
-    let maxInt = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111";
 
     this.timeout(120000);
 
@@ -138,14 +138,26 @@ describe("Fight", function() {
                 bracketStatus += fighters[j] == 0 ? "0" : "1";
             }
             let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
-            await fightClub.connect(accounts[0]).setBracketStatus(BigInt(parseInt(bracketStatus.substring(0,256), 2)).toString(), BigInt(parseInt(bracketStatus.substring(256,512), 2)).toString(), BigInt(parseInt(bracketStatus.substring(512,768), 2)).toString(), BigInt(parseInt(bracketStatus.substring(768,1024), 2)).toString());
+            let bracketStatusArr = [];
+            for (let i = 0; i < 4; i++) {
+                bracketStatusArr[i] = "";
+                let bn_two = new BigNumber(bracketStatus.substring(256*i,256*(i+1)), 2);
+                for (let j = 0; j < bn_two.c.length; j++) {
+                    if (j > 0)
+                        bracketStatusArr[i] += zeroPad(bn_two.c[j].toString(), 14);
+                    else
+                        bracketStatusArr[i] += bn_two.c[j].toString();
+                }
+            }
+            await (await fightClub.connect(accounts[0]).setBracketStatus(bracketStatusArr[0], bracketStatusArr[1], bracketStatusArr[2], bracketStatusArr[3])).wait();
             await (await fightClub.connect(accounts[0]).setConfig(true, i)).wait();
             await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
             await mineUntil(currentBlock.number + (6 - (currentBlock.number % 5)));
         }
         
-        let winner = await fightClub.connect(accounts[0]).evaluateWinner();
+        let winner = parseInt(((await (await fightClub.connect(accounts[0]).evaluateWinner()).wait()).events[0].data), 16);
         console.log(`Fighter ${winner} Won the Bracket!`);
+        console.log(`Fighter ${lastFighter} Won the Bracket!`);
     });
 
 
@@ -153,7 +165,7 @@ describe("Fight", function() {
 
     // it("evaluateWinner", async function() {
     //     for (let i of [0,1,2,3,4,5,6,7,8,9]) {
-    //         await (await fightClub.connect(accounts[0]).setBracketStatus(0, 0, 128, 0)).wait();
+    //         await (await fightClub.connect(accounts[0]).setBracketStatus(BigInt(Math.pow(2, 232)).toString(), 0, 0, 0)).wait();
     //         console.log(await fightClub.connect(accounts[0]).getBracketStatus());
     //         await (await fightClub.connect(accounts[0]).setConfig(false, i+1)).wait();
     //         console.log(await fightClub.connect(accounts[0]).getConfig());

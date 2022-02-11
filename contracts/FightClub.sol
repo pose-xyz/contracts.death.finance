@@ -36,10 +36,10 @@ contract FightClub {
 
     // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 fighter groups.
     struct BracketStatus {
-        uint fighterTrancheOne;
-        uint fighterTrancheTwo;
-        uint fighterTrancheThree;
-        uint fighterTrancheFour;
+        uint256 fighterTrancheOne;
+        uint256 fighterTrancheTwo;
+        uint256 fighterTrancheThree;
+        uint256 fighterTrancheFour;
     }
 
     struct Fighter {
@@ -63,6 +63,8 @@ contract FightClub {
         uint8 attackerDefense;
         uint8 defenderDefense;
     }
+
+    event Winner(uint24 _winner);
 
     constructor (uint _elementsMatrix) {
         controller = msg.sender;
@@ -101,7 +103,7 @@ contract FightClub {
         return ((tranche >> fighterNum) & 1) == 0;
     }
 
-    function evaluateWinner() view external returns (uint24) {
+    function evaluateWinner() external {
         require(config.currentRound == BOUTS, 'Must be last round');
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound - 1];
 
@@ -117,28 +119,39 @@ contract FightClub {
         } else if (bracketStatus.fighterTrancheThree != 0) {
             tranche = bracketStatus.fighterTrancheThree;
             offset = 512;
-        } else if (bracketStatus.fighterTrancheThree != 0) {
-            tranche = bracketStatus.fighterTrancheThree;
+        } else if (bracketStatus.fighterTrancheFour != 0) {
+            tranche = bracketStatus.fighterTrancheFour;
             offset = 768;
         }
 
-        for (uint r=config.currentRound - 1;r>0;r--) {
+        for (uint r=config.currentRound - 1;r>1;r--) {
             BracketStatus storage pastBracketStatus = roundBracketStatus[r];
             if (offset == 0 && ((pastBracketStatus.fighterTrancheOne & tranche) == 0)) {
-                return 16777215;
+                emit Winner(16777215);
             } else if (offset == 256 && ((pastBracketStatus.fighterTrancheTwo & tranche) == 0)) {
-                return 16777215;
+                emit Winner(16777215);
             } else if (offset == 512 && ((pastBracketStatus.fighterTrancheThree & tranche) == 0)) {
-                return 16777215;
+                emit Winner(16777215);
             } else if (offset == 768 && ((pastBracketStatus.fighterTrancheFour & tranche) == 0)) {
-                return 16777215;
+                emit Winner(16777215);
             }
         }
         
         for (uint i=0;i<256;i++) {
-            if ((tranche >> (i)) & 1 == 1) {
+            if ((tranche >> i) & 1 == 1) {
+                config.winningFighterIdentifier = uint24(offset + (255 - i));
+                emit Winner(uint24(offset + (255 - i)));
+            }
+        }
+
+        emit Winner(16777215);
+    }
+
+    function testThing(uint thing) pure external returns(uint24) {
+        for (uint i=0;i<256;i++) {
+            if ((thing >> i) & 1 == 1) {
                 // config.winningFighterIdentifier = uint24(offset + (i + 1));
-                return uint24(offset + (i + 1));
+                return uint24(i + 1);
             }
         }
 
@@ -198,7 +211,7 @@ contract FightClub {
     }
 
     // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 member groups.
-    function setBracketStatus(uint _fighterTrancheOne, uint _fighterTrancheTwo, uint _fighterTrancheThree, uint _fighterTrancheFour) external {
+    function setBracketStatus(uint256 _fighterTrancheOne, uint256 _fighterTrancheTwo, uint256 _fighterTrancheThree, uint256 _fighterTrancheFour) external {
         require(msg.sender == controller, 'Must be called by controller');
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         bracketStatus.fighterTrancheOne = _fighterTrancheOne;
@@ -207,7 +220,7 @@ contract FightClub {
         bracketStatus.fighterTrancheFour = _fighterTrancheFour;
     }
 
-    function getBracketStatus() external view returns (uint, uint, uint, uint) {
+    function getBracketStatus() external view returns (uint256, uint256, uint256, uint256) {
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound];
         return (bracketStatus.fighterTrancheOne, bracketStatus.fighterTrancheTwo, bracketStatus.fighterTrancheThree, bracketStatus.fighterTrancheFour);
     }
