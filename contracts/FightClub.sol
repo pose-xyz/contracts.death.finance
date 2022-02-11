@@ -176,7 +176,7 @@ contract FightClub {
         
         FighterBet storage existingBet = bets[msg.sender];
         bool hasExistingBet = existingBet.amount > 0;
-        bool previousFighterStillAlive = hasExistingBet && isFighterAlive(existingBet.fighterIdentifier);
+        bool previousFighterStillAlive = hasExistingBet && (isFighterAlive(existingBet.fighterIdentifier) || config.currentRound == 0);
 
         if (previousFighterStillAlive) {
             // Don't allow them to change fighter if their fighter hasn't been eliminated
@@ -366,6 +366,6 @@ contract FightClub {
         fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
         fighterTotalPot.lastRoundUpdated = config.currentRound;
 
-        payable(msg.sender).transfer(fighterTotalPot.amount * fighterTotalPot.equityOfAmount / fighterBet.equityOfAmount);
+        payable(msg.sender).transfer(config.pot * fighterTotalPot.equityOfAmount / fighterBet.equityOfAmount);
     }
 }
