@@ -16,6 +16,7 @@ contract FightClub {
     mapping(uint => BracketStatus) internal roundBracketStatus;
 
     mapping(address => FighterBet) internal bets;
+    mapping(address => uint80) internal bettorTotalContributions;
     // key: fighter identifier, value: bets on fighters
     mapping(uint16 => FighterBet) internal fighterTotalPots;
 
@@ -23,6 +24,7 @@ contract FightClub {
 
     struct Config {
         // Betting is open before a round has begun and after the round has completed.
+        bool isError;
         bool fighterRedeemed;
         bool bettingIsOpen;
         uint8 currentRound;
@@ -88,6 +90,11 @@ contract FightClub {
         require(_currentRound >= config.currentRound, 'Requires greater current round');
         config.bettingIsOpen = _bettingIsOpen;
         config.currentRound = _currentRound;
+    }
+
+    function setConfigError(bool _isError) external {
+        require(msg.sender == controller, 'Must be called by controller');
+        config.isError = _isError;
     }
 
     function getConfig() view external returns (bool, uint8, uint24, uint) {
@@ -212,6 +219,7 @@ contract FightClub {
         }
 
         // Update total pot
+        bettorTotalContributions[msg.sender] += newBetAmount;
         config.pot += newBetAmount;
     }
 
@@ -367,5 +375,12 @@ contract FightClub {
         fighterTotalPot.lastRoundUpdated = config.currentRound;
 
         payable(msg.sender).transfer(config.pot * fighterTotalPot.equityOfAmount / fighterBet.equityOfAmount);
+    }
+
+    function emergencyWithdrawal() external {
+        require(config.isError, 'Must be in error state');
+        uint80 bettorTotalContribution = bettorTotalContributions[msg.sender];
+        bettorTotalContributions[msg.sender] = 0;
+        payable(msg.sender).transfer(bettorTotalContribution);
     }
 }
