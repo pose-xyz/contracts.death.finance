@@ -373,8 +373,8 @@ contract FightClub {
         roundDifference = config.currentRound - fighterTotalPot.lastRoundUpdated;
         fighterTotalPot.equityOfAmount *= uint80(2**roundDifference);
         fighterTotalPot.lastRoundUpdated = config.currentRound;
-
-        payable(msg.sender).transfer(config.pot * fighterTotalPot.equityOfAmount / fighterBet.equityOfAmount);
+        
+        payable(msg.sender).transfer((config.pot * fighterBet.equityOfAmount * 19) / (fighterTotalPot.equityOfAmount * 20));
     }
 
     function emergencyWithdrawal() external {
