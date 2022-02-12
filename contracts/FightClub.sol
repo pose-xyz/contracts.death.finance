@@ -254,20 +254,20 @@ contract FightClub {
         require(block.number % 5 != 0, 'Blocknum divisible by 5');
 
         Fighter memory fighterTwo;
-        fighterTwo.specialElement = uint8(_fighterTwo & 15);
-        fighterTwo.specialDefense = uint8((_fighterTwo >> 4) & 15);
-        fighterTwo.specialAttack = uint8((_fighterTwo >> 8) & 15);
-        fighterTwo.element = uint8((_fighterTwo >> 12) & 15);
-        fighterTwo.defense = uint8((_fighterTwo >> 16) & 15);
-        fighterTwo.attack = uint8((_fighterTwo >> 20) & 15);
+        fighterTwo.element = uint8(_fighterTwo & 15);
+        fighterTwo.specialElement = uint8((_fighterTwo >> 4) & 15);
+        fighterTwo.defense = uint8((_fighterTwo >> 8) & 15);
+        fighterTwo.attack = uint8((_fighterTwo >> 12) & 15);
+        fighterTwo.specialDefense = uint8((_fighterTwo >> 16) & 15);
+        fighterTwo.specialAttack = uint8((_fighterTwo >> 20) & 15);
 
         Fighter memory fighterOne;
-        fighterOne.specialElement = uint8(_fighterOne & 15);
-        fighterOne.specialDefense = uint8((_fighterOne >> 4) & 15);
-        fighterOne.specialAttack = uint8((_fighterOne >> 8) & 15);
-        fighterOne.element = uint8((_fighterOne >> 12) & 15);
-        fighterOne.defense = uint8((_fighterOne >> 16) & 15);
-        fighterOne.attack = uint8((_fighterOne >> 20) & 15);
+        fighterOne.element = uint8(_fighterOne & 15);
+        fighterOne.specialElement = uint8((_fighterOne >> 4) & 15);
+        fighterOne.defense = uint8((_fighterOne >> 8) & 15);
+        fighterOne.attack = uint8((_fighterOne >> 12) & 15);
+        fighterOne.specialDefense = uint8((_fighterOne >> 16) & 15);
+        fighterOne.specialAttack = uint8((_fighterOne >> 20) & 15);
         fighterOne.isTurn = (fighterOne.specialDefense + fighterOne.specialAttack + fighterOne.defense + fighterOne.attack) <= (fighterTwo.specialDefense + fighterTwo.specialAttack + fighterTwo.defense + fighterTwo.attack);
         
         bool shouldSkip;

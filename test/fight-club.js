@@ -45,20 +45,20 @@ describe("FightClub", function() {
         fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
         fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
         console.log("------------------PLAYER ONE------------------")
-        console.log("Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
-        console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
-        console.log("Element: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
-        console.log("Special Attack: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
-        console.log("Special Defense: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
-        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
+        console.log("Special Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
+        console.log("Special Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
+        console.log("Attack: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
+        console.log("Defense: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
+        console.log("Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
         console.log("\n");
         console.log("------------------PLAYER TWO------------------")
-        console.log("Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
-        console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
-        console.log("Element: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-        console.log("Special Attack: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
-        console.log("Special Defense: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
-        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
+        console.log("Special Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
+        console.log("Special Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
+        console.log("Attack: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
+        console.log("Defense: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
+        console.log("Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
         console.log("\n");
         console.log("---------------------FIGHT---------------------");
 
@@ -363,11 +363,12 @@ const mineUntil = async function (blockNum) {
 //     }
 // }
 
-// 0000     = 0-15 attack
-// 0000     = 0-15 defense
-// 0000     = 0-15 element
+
 // 0000     = 0-15 special attack
 // 0000     = 0-15 special defense
+// 0000     = 0-15 attack
+// 0000     = 0-15 defense
 // 0000     = 0-15 special element
+// 0000     = 0-15 element
 // 0111 1111 1100 0111 1111 1010 (Example)
 // 0111 1111 1011 0111 1110 0111 (Example)
