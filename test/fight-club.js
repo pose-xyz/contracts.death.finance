@@ -187,6 +187,128 @@ describe("FightClub", function() {
         console.log(`Fighter ${lastFighter} Won the Bracket!`);
     });
 
+    it("successfully redeem bet after winning tournament", async function() {
+        const fighterID = 24
+        await fightClub.connect(accounts[0]).setConfig(true, 0)
+        const betAmount = 69
+        await fightClub.connect(accounts[1]).placeBet((fighterID), {
+            value: betAmount
+        });
+
+        const amount = await fightClub.connect(accounts[1]).getBet();
+        await expect(amount[1]).to.equal(betAmount);
+
+        await fightClub.connect(accounts[0]).setConfig(false, 10);
+
+        const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(24);
+        await fightClub
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+        expect(totalBets).to.equal(betAmount);
+
+        await fightClub.connect(accounts[1]).redeemPot();
+        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+
+        expect(postRedemptionBets).to.equal(0);
+    });
+
+    it("successfully redeem bet after winning tournament, with multiple bettors on different rounds", async function() {
+        const fighterID = 24
+
+        const winningBracket = await fightClub
+            .connect(accounts[0])
+            .bracketWithOnlyFighterAlive(24);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        // First bettor.
+        const firstBettorRound = 0
+        await fightClub.connect(accounts[0]).setConfig(true, firstBettorRound)
+        const firstBetAmount = 69
+        await fightClub.connect(accounts[1]).placeBet(fighterID, {
+            value: firstBetAmount
+        });
+
+        // Second bettor.
+        const secondBettorRound = 3
+        await fightClub.connect(accounts[0]).setConfig(true, secondBettorRound);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+        const secondBetAmount = 42
+        await fightClub.connect(accounts[2]).placeBet((fighterID), {
+            value: secondBetAmount
+        });
+
+        // Third bettor.
+        const thirdBettorRound = 7
+        await fightClub.connect(accounts[0]).setConfig(true, thirdBettorRound);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+        const thirdBetAmount = 420
+        await fightClub.connect(accounts[3]).placeBet((fighterID), {
+            value: thirdBetAmount
+        });
+
+        // Final round
+        await fightClub.connect(accounts[0]).setConfig(true, 10);
+        await fightClub.connect(accounts[0])
+            .setBracketStatus(
+                winningBracket,
+                0,
+                0,
+                0);
+
+        // Pot includes all three bettor amounts.
+        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+        expect(totalBets).to.equal(firstBetAmount + secondBetAmount + thirdBetAmount);
+
+        const fighterTotalPot = await fightClub.connect(accounts[1]).getFighterTotalPot(fighterID);
+        const fighterTotalEquity = await fightClub.connect(accounts[1]).getEquityForBet(fighterTotalPot[2], fighterTotalPot[0]);
+
+        const totalRounds = 10
+        const firstBettorBet = await fightClub.connect(accounts[1]).getBet();
+        const firstBettorLastUpdatedRound = firstBettorBet[3];
+        const firstBettorEquity = firstBettorBet[2] * (Math.pow(2, (totalRounds - firstBettorLastUpdatedRound)));
+        await expect(firstBettorEquity).to.equal(firstBetAmount * (Math.pow(2, (totalRounds - firstBettorRound))));
+        const firstBettorPercentage = firstBettorEquity / fighterTotalEquity;
+
+        const secondBettorBet = await fightClub.connect(accounts[2]).getBet();
+        const secondBettorLastUpdatedRound = secondBettorBet[3];
+        const secondBettorEquity = secondBettorBet[2] * (Math.pow(2, (totalRounds - secondBettorLastUpdatedRound)));
+        await expect(secondBettorEquity).to.equal(secondBetAmount * (Math.pow(2, (totalRounds - secondBettorRound))));
+        const secondBettorPercentage = secondBettorEquity / fighterTotalEquity;
+
+        const thirdBettorBet = await fightClub.connect(accounts[3]).getBet();
+        const thirdBettorLastUpdatedRound = thirdBettorBet[3];
+        const thirdBettorEquity = thirdBettorBet[2] * (Math.pow(2, (totalRounds - thirdBettorLastUpdatedRound)));
+        await expect(thirdBettorEquity).to.equal(thirdBetAmount * (Math.pow(2, totalRounds - thirdBettorRound)));
+
+        const preRedemptionPot = await fightClub.connect(accounts[0]).getTotalPot();
+        console.log("Pre redemption pot is %s.", preRedemptionPot);
+        await fightClub.connect(accounts[1]).redeemPot();
+        await fightClub.connect(accounts[2]).redeemPot();
+        await fightClub.connect(accounts[3]).redeemPot();
+        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+        console.log("After all three redemptions, pot is %s.", postRedemptionBets);
+    });
+
     it("fail bet if betting is closed", async function() {
         const fighterID = 24
         await fightClub.connect(accounts[0]).setConfig(false, 0)
