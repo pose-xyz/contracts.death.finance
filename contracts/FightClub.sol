@@ -219,6 +219,9 @@ contract FightClub {
             setNewBetProperties(fighterTotalPot, newBetAmount);
         }
 
+        // Add randomness to fight club
+        addRandomness(uint128(block.timestamp));
+
         // Update total pot
         bettorTotalContributions[msg.sender] += newBetAmount;
         config.pot += newBetAmount;
@@ -239,8 +242,8 @@ contract FightClub {
         return (bet.fighterIdentifier, bet.amount, bet.equityOfAmount, bet.lastRoundUpdated);
     }
 
-    function addRandomness(uint128 _random) external {
-        require(block.number % 5 == 0, 'Blocknum not divisible by 5');
+    function addRandomness(uint128 _random) public {
+        require(block.number % 5 == 0 || config.bettingIsOpen, 'Blocknum not divisible by 5 or betting is not open.');
         require(_random > 1, 'Multiplier less than 2');
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
