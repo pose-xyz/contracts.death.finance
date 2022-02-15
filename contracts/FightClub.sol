@@ -248,6 +248,10 @@ contract FightClub {
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
     }
 
+    function getRandomness() external view returns(uint) {
+        return random;
+    }
+
     // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 member groups.
     function setBracketStatus(uint256 _fighterTrancheOne, uint256 _fighterTrancheTwo, uint256 _fighterTrancheThree, uint256 _fighterTrancheFour) external {
         require(msg.sender == controller, 'Must be called by controller');

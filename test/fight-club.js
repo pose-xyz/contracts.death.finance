@@ -7,7 +7,7 @@ describe("FightClub", function() {
     let network;
     let accounts;
     let fightClub;
-    const simulatedEventLog = "11001000000010000001010000000010100001011000000000100001001000000000100001001100000001100001";
+    const simulatedEventLog = "11000100000001000001001000000011100001010100000010100000";
 
     this.timeout(120000);
 
@@ -41,8 +41,8 @@ describe("FightClub", function() {
         
         const zeroPad = (num, places) => String(num).padStart(places, '0')
 
-        let fighterOneStats = 8337395;
-        let fighterTwoStats = 8333282;
+        let fighterOneStats = 14325810;
+        let fighterTwoStats = 6627840;
         fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
         fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
         console.log("------------------PLAYER ONE------------------")
@@ -95,7 +95,8 @@ describe("FightClub", function() {
 
         await mineUntil(26);
 
-        eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
+        // eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
+        eventLog = await fightClub.connect(accounts[0]).fight(true, fighterOneStats, fighterTwoStats, 1, 1);
         const EVENT_SIZE = 9;
         eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
         let isTie = (eventLog.length % EVENT_SIZE) == 1;
@@ -107,7 +108,6 @@ describe("FightClub", function() {
 
         eventLog = await fightClub.connect(accounts[1]).fight(true, fighterOneStats, fighterTwoStats, '47253922380151261668899214344815469786', 31);
         eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
-        console.log(eventLog);
         isTie = (eventLog.length % EVENT_SIZE) == 1;
         await expect(eventLog).to.equal(simulatedEventLog);
         
