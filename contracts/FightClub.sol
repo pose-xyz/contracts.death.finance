@@ -15,7 +15,7 @@ contract FightClub {
 
     mapping(address => FighterBet) internal bets;
     mapping(address => uint80) internal bettorTotalContributions;
-    // key: fighter identifier, value: bets on fighters
+    mapping(address => uint) internal userTotalChaos;
     mapping(uint16 => FighterBet) internal fighterTotalPots;
 
     Config internal config;
@@ -246,10 +246,15 @@ contract FightClub {
         require(block.number % 5 == 0 || config.bettingIsOpen, 'Blocknum not divisible by 5 or betting is not open.');
         require(_random > 1, 'Multiplier less than 2');
         random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
+        userTotalChaos[msg.sender] += 1;
     }
 
     function getRandomness() external view returns(uint) {
         return random;
+    }
+
+    function getUserRandomness(address _user) external view returns(uint) {
+        return userTotalChaos[_user];
     }
 
     // To avoid hitting the size limit on brackets, we have divided the bracket into four, 256 member groups.

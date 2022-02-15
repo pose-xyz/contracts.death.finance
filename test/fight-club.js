@@ -17,17 +17,17 @@ describe("FightClub", function() {
 
         const VerifySignature = await ethers.getContractFactory("VerifySignature");
         if (network.name == 'kovan')
-            verifySignature = await VerifySignature.attach("0x1B8144db9e010C4b39BeCC77975c96B12B8dFf0c");
+            verifySignature = await VerifySignature.attach("0xAbE190d309EE79E7780B1d255e89e7da62D6716C");
         else if (network.name == 'goerli')
-            verifySignature = await VerifySignature.attach("0x1B8144db9e010C4b39BeCC77975c96B12B8dFf0c");
+            verifySignature = await VerifySignature.attach("0xAbE190d309EE79E7780B1d255e89e7da62D6716C");
         else
             verifySignature = await VerifySignature.deploy();
 
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0xfE891216cFa520997271ad892833b514b9422AF5");
+            fightClub = await FightClub.attach("0xEA896aA63f6495f50a26c49749306b28B07E79e0");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0xfE891216cFa520997271ad892833b514b9422AF5");
+            fightClub = await FightClub.attach("0xEA896aA63f6495f50a26c49749306b28B07E79e0");
         else
             fightClub = await FightClub.deploy(
                 "193660831688735064581587655956512620320321525841920",
@@ -37,7 +37,7 @@ describe("FightClub", function() {
             );
     });
 
-    it("Fight", async function() {
+    it.only("Fight", async function() {
         
         const zeroPad = (num, places) => String(num).padStart(places, '0')
 
@@ -80,8 +80,10 @@ describe("FightClub", function() {
         );
 
         await mineUntil(19);
-
+        
+        await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('0');
         await fightClub.connect(accounts[1]).addRandomness(2423432);
+        await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('1');
 
         await expect(fightClub.connect(accounts[1]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
             "Must be called by controller"
