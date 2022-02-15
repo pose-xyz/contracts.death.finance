@@ -1,0 +1,35 @@
+[
+    {
+        "round": 0,
+        "fight": 0,
+        "blockNumber": 2,
+        "fighterOneId": 0,
+        "fighterOneUrl": "https://opensea.com",
+        "fighterTwoId": 1,
+        "fighterTwoUrl": "https://opensea.com",
+        "prevRoundOne": -1,
+        "prevRoundTwo": -1
+    },
+    {
+        "round": 0,
+        "fight": 1,
+        "blockNumber": 7,
+        "fighterOneId": 2,
+        "fighterOneUrl": "https://opensea.com",
+        "fighterTwoId": 3,
+        "fighterTwoUrl": "https://opensea.com",
+        "prevRoundOne": -1,
+        "prevRoundTwo": -1
+    },
+    {
+        "round": 1,
+        "fight": 0,
+        "blockNumber": 12,
+        "fighterOneId": -1,
+        "fighterOneUrl": "https://opensea.com",
+        "fighterTwoId": -1,
+        "fighterTwoUrl": "https://opensea.com",
+        "prevRoundOne": 0,
+        "prevRoundTwo": 1
+    }
+]
