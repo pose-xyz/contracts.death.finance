@@ -17,17 +17,17 @@ describe("FightClub", function() {
 
         const VerifySignature = await ethers.getContractFactory("VerifySignature");
         if (network.name == 'kovan')
-            verifySignature = await VerifySignature.attach("0x2087de4Cc539E1545F63794166AcF53E3cD8829E");
+            verifySignature = await VerifySignature.attach("0x1B8144db9e010C4b39BeCC77975c96B12B8dFf0c");
         else if (network.name == 'goerli')
-            verifySignature = await VerifySignature.attach("0x2087de4Cc539E1545F63794166AcF53E3cD8829E");
+            verifySignature = await VerifySignature.attach("0x1B8144db9e010C4b39BeCC77975c96B12B8dFf0c");
         else
             verifySignature = await VerifySignature.deploy();
 
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0x4B09C49022529EbA8524761d283863adA05861c1");
+            fightClub = await FightClub.attach("0x887b7132bA90851596fF87056F44579832452a28");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0x4B09C49022529EbA8524761d283863adA05861c1");
+            fightClub = await FightClub.attach("0x887b7132bA90851596fF87056F44579832452a28");
         else
             fightClub = await FightClub.deploy(
                 "193660831688735064581587655956512620320321525841920",
@@ -47,17 +47,17 @@ describe("FightClub", function() {
         fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
         console.log("------------------PLAYER ONE------------------")
         console.log("Special Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
-        console.log("Special Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
+        console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
         console.log("Attack: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
-        console.log("Defense: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
+        console.log("Health: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
         console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
         console.log("Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
         console.log("\n");
         console.log("------------------PLAYER TWO------------------")
         console.log("Special Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
-        console.log("Special Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
+        console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
         console.log("Attack: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-        console.log("Defense: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+        console.log("Health: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
         console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
         console.log("Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
         console.log("\n");
@@ -95,8 +95,7 @@ describe("FightClub", function() {
 
         await mineUntil(26);
 
-        // eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
-        eventLog = await fightClub.connect(accounts[0]).fight(true, fighterOneStats, fighterTwoStats, 1, 1);
+        eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
         const EVENT_SIZE = 9;
         eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
         let isTie = (eventLog.length % EVENT_SIZE) == 1;
@@ -465,9 +464,9 @@ const allFightersAliveTranche = function () {
 // }
 
 // 0000     = 0-15 special attack
-// 0000     = 0-15 special defense
-// 0000     = 0-15 attack
 // 0000     = 0-15 defense
+// 0000     = 0-15 attack
+// 0000     = 0-15 health
 // 0000     = 0-15 special element
 // 0000     = 0-15 element
 // 0111 1111 1100 0111 1111 1010 (Example)
