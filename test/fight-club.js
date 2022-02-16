@@ -3,17 +3,30 @@ const { ethers } = require("hardhat");
 const BigNumber = require('bignumber.js');
 const exampleBracket = require('./example-bracket.json');
 
+var sleep = timeout => {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve();
+        }, timeout);
+    });
+};
+
 describe("FightClub", function() {
+    let isGoerli = false;
     let network;
     let accounts;
     let fightClub;
     const simulatedEventLog = "11000100000001000001001000000011100001010100000010100000";
 
-    this.timeout(120000);
+    this.timeout(6000000);
 
     beforeEach(async () => {
         network = await ethers.provider.getNetwork();
         accounts = await ethers.getSigners();
+
+        if (network.name == 'goerli') {
+            isGoerli = true;
+        }
 
         const VerifySignature = await ethers.getContractFactory("VerifySignature");
         if (network.name == 'kovan')
@@ -25,9 +38,9 @@ describe("FightClub", function() {
 
         const FightClub = await ethers.getContractFactory("FightClub");
         if (network.name == 'kovan')
-            fightClub = await FightClub.attach("0xEA896aA63f6495f50a26c49749306b28B07E79e0");
+            fightClub = await FightClub.attach("0xc16e8A86E3834E04AfFADC3bFDFD3FA502190c1B");
         else if (network.name == 'goerli')
-            fightClub = await FightClub.attach("0xEA896aA63f6495f50a26c49749306b28B07E79e0");
+            fightClub = await FightClub.attach("0xc16e8A86E3834E04AfFADC3bFDFD3FA502190c1B");
         else
             fightClub = await FightClub.deploy(
                 "193660831688735064581587655956512620320321525841920",
@@ -37,369 +50,436 @@ describe("FightClub", function() {
             );
     });
 
-    it.only("Fight", async function() {
-        
-        const zeroPad = (num, places) => String(num).padStart(places, '0')
 
-        let fighterOneStats = 14325810;
-        let fighterTwoStats = 6627840;
-        fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
-        fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
-        console.log("------------------PLAYER ONE------------------")
-        console.log("Special Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
-        console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
-        console.log("Attack: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
-        console.log("Health: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
-        console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
-        console.log("Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
-        console.log("\n");
-        console.log("------------------PLAYER TWO------------------")
-        console.log("Special Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
-        console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
-        console.log("Attack: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
-        console.log("Health: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
-        console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
-        console.log("Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
-        console.log("\n");
-        console.log("---------------------FIGHT---------------------");
 
-        await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
-            "Blocknum not divisible by 5"
-        );
+    describe("Testnet", function() {
 
-        await mineUntil(9);
+        it("testnet: Fight", async function() {
 
-        await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
-            "Multiplier less than 2"
-        );
+            if (!isGoerli) {
+                const zeroPad = (num, places) => String(num).padStart(places, '0')
 
-        await mineUntil(14);
-
-        await expect(fightClub.connect(accounts[1]).addRandomness(1)).to.be.revertedWith(
-            "Multiplier less than 2"
-        );
-
-        await mineUntil(19);
-        
-        await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('0');
-        await fightClub.connect(accounts[1]).addRandomness(2423432);
-        await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('1');
-
-        await expect(fightClub.connect(accounts[1]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
-            "Must be called by controller"
-        );
-
-        await mineUntil(25);
-
-        await expect(fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
-            "Blocknum divisible by 5"
-        );
-
-        await mineUntil(26);
-
-        eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
-        const EVENT_SIZE = 9;
-        eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
-        let isTie = (eventLog.length % EVENT_SIZE) == 1;
-        
-        for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
-            console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
-        }
-        console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
-
-        eventLog = await fightClub.connect(accounts[1]).fight(true, fighterOneStats, fighterTwoStats, '47253922380151261668899214344815469786', 31);
-        eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
-        isTie = (eventLog.length % EVENT_SIZE) == 1;
-        await expect(eventLog).to.equal(simulatedEventLog);
-        
-        for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
-            console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
-        }
-        console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
-
-    });
-
-    it("successfully redeem bet after winning tournament", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 0)
-        const betAmount = 69
-        await fightClub.connect(accounts[1]).placeBet((fighterID), {
-            value: betAmount
+                let fighterOneStats = 14325810;
+                let fighterTwoStats = 6627840;
+                fighterOneStatsBin = zeroPad((fighterOneStats >>> 0).toString(2), 24);
+                fighterTwoStatsBin = zeroPad((fighterTwoStats >>> 0).toString(2), 24);
+                console.log("------------------PLAYER ONE------------------")
+                console.log("Special Attack: ",          parseInt(fighterOneStatsBin.substring(0, 4), 2));
+                console.log("Defense: ",         parseInt(fighterOneStatsBin.substring(4, 8), 2));
+                console.log("Attack: ",         parseInt(fighterOneStatsBin.substring(8, 12), 2));
+                console.log("Health: ",  parseInt(fighterOneStatsBin.substring(12, 16), 2));
+                console.log("Special Element: ", parseInt(fighterOneStatsBin.substring(16, 20), 2));
+                console.log("Element: ", parseInt(fighterOneStatsBin.substring(20, 24), 2));
+                console.log("\n");
+                console.log("------------------PLAYER TWO------------------")
+                console.log("Special Attack: ",          parseInt(fighterTwoStatsBin.substring(0, 4), 2));
+                console.log("Defense: ",         parseInt(fighterTwoStatsBin.substring(4, 8), 2));
+                console.log("Attack: ",         parseInt(fighterTwoStatsBin.substring(8, 12), 2));
+                console.log("Health: ",  parseInt(fighterTwoStatsBin.substring(12, 16), 2));
+                console.log("Special Element: ", parseInt(fighterTwoStatsBin.substring(16, 20), 2));
+                console.log("Element: ", parseInt(fighterTwoStatsBin.substring(20, 24), 2));
+                console.log("\n");
+                console.log("---------------------FIGHT---------------------");
+    
+                await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
+                    "Multiplier less than 2"
+                );
+    
+                await mineUntil(12);
+    
+                await expect(fightClub.connect(accounts[1]).addRandomness(0)).to.be.revertedWith(
+                    "Blocknum has odd tens digit or betting is not open."
+                );
+    
+                await mineUntil(20);
+                
+                await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('0');
+                await fightClub.connect(accounts[1]).addRandomness(2423432, { gasPrice: 2000000000, gasLimit: 85000 });
+                await expect((await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString()).to.equal('1');
+    
+                await mineUntil(25);
+    
+                await expect(fightClub.connect(accounts[1]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
+                    "Must be called by controller"
+                );
+    
+                await expect(fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0)).to.be.revertedWith(
+                    "Blocknum has even tens digit"
+                );
+    
+                await mineUntil(36);
+    
+                eventLog = await fightClub.connect(accounts[0]).fight(false, fighterOneStats, fighterTwoStats, 0, 0);
+                const EVENT_SIZE = 9;
+                eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
+                let isTie = (eventLog.length % EVENT_SIZE) == 1;
+                
+                for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
+                    console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
+                }
+                console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
+    
+                eventLog = await fightClub.connect(accounts[1]).fight(true, fighterOneStats, fighterTwoStats, '47253922380151261668899214344815469786', 31);
+                eventLog = BigInt(eventLog.toString().replace(".", "")).toString(2);
+                isTie = (eventLog.length % EVENT_SIZE) == 1;
+                await expect(eventLog).to.equal(simulatedEventLog);
+                
+                for(let i = 1; i < eventLog.length - 1; i+=EVENT_SIZE) {
+                    console.log(`${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P1 Attack:": "P2 Attack:"} ${parseInt(eventLog.substring(i+1, i+5), 2)}, ${parseInt(eventLog.substring(i, i+1), 2) == 0 ? "P2 Counter:": "P1 Counter:"} ${parseInt(eventLog.substring(i+5, i+EVENT_SIZE), 2)}`);
+                }
+                console.log(`${isTie ? "TIE!" : parseInt(eventLog.substring(eventLog.length-1, eventLog.length), 2) == 0 ? "Fighter 1 Wins!" : "Fighter 2 Wins!"}`);
+            } else {
+                return this.skip();
+            }
         });
 
-        const amount = await fightClub.connect(accounts[1]).getBet();
-        await expect(amount[1]).to.equal(betAmount);
+        it("testnet: successfully redeem bet after winning tournament", async function() {
+            
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 0)
+                const betAmount = 69
+                await fightClub.connect(accounts[1]).placeBet((fighterID), {
+                    value: betAmount
+                });
 
-        await fightClub.connect(accounts[0]).setConfig(false, 10);
+                const amount = await fightClub.connect(accounts[1]).getBet();
+                await expect(amount[1]).to.equal(betAmount);
 
-        const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(fighterID);
-        await fightClub
-            .setBracketStatus(
-                winningBracket,
-                0,
-                0,
-                0);
+                await fightClub.connect(accounts[0]).setConfig(false, 10);
 
-        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
-        expect(totalBets).to.equal(betAmount);
+                const winningBracket = await fightClub.connect(accounts[0]).bracketWithOnlyFighterAlive(fighterID);
+                await fightClub
+                    .setBracketStatus(
+                        winningBracket,
+                        0,
+                        0,
+                        0);
 
-        await fightClub.connect(accounts[1]).redeemPot();
-        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+                const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+                expect(totalBets).to.equal(betAmount);
 
-        expect(postRedemptionBets).to.equal(0);
-    });
+                await fightClub.connect(accounts[1]).redeemPot();
+                const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
 
-    it("successfully redeem bet after winning tournament, with multiple bettors on different rounds", async function() {
-        const fighterID = 232
-
-        const winningBracket = await fightClub
-            .connect(accounts[0])
-            .bracketWithOnlyFighterAlive(fighterID);
-        await fightClub.connect(accounts[0])
-            .setBracketStatus(
-                winningBracket,
-                0,
-                0,
-                0);
-
-        // First bettor.
-        const firstBettorRound = 0
-        await fightClub.connect(accounts[0]).setConfig(true, firstBettorRound)
-        const firstBetAmount = 69
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: firstBetAmount
+                expect(postRedemptionBets).to.equal(0);
+            } else {
+                return this.skip();
+            }
         });
 
-        // Second bettor.
-        const secondBettorRound = 3
-        await fightClub.connect(accounts[0]).setConfig(true, secondBettorRound);
-        await fightClub.connect(accounts[0])
-            .setBracketStatus(
-                winningBracket,
-                0,
-                0,
-                0);
-        const secondBetAmount = 42
-        await fightClub.connect(accounts[2]).placeBet((fighterID), {
-            value: secondBetAmount
+        it("testnet: successfully redeem bet after winning tournament, with multiple bettors on different rounds", async function() {
+            
+            if (!isGoerli) {
+                const fighterID = 232
+
+                const winningBracket = await fightClub
+                    .connect(accounts[0])
+                    .bracketWithOnlyFighterAlive(fighterID);
+                await fightClub.connect(accounts[0])
+                    .setBracketStatus(
+                        winningBracket,
+                        0,
+                        0,
+                        0);
+
+                // First bettor.
+                const firstBettorRound = 0
+                await fightClub.connect(accounts[0]).setConfig(true, firstBettorRound)
+                const firstBetAmount = 69
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: firstBetAmount
+                });
+
+                // Second bettor.
+                const secondBettorRound = 3
+                await fightClub.connect(accounts[0]).setConfig(true, secondBettorRound);
+                await fightClub.connect(accounts[0])
+                    .setBracketStatus(
+                        winningBracket,
+                        0,
+                        0,
+                        0);
+                const secondBetAmount = 42
+                await fightClub.connect(accounts[2]).placeBet((fighterID), {
+                    value: secondBetAmount
+                });
+
+                // Third bettor.
+                const thirdBettorRound = 7
+                await fightClub.connect(accounts[0]).setConfig(true, thirdBettorRound);
+                await fightClub.connect(accounts[0])
+                    .setBracketStatus(
+                        winningBracket,
+                        0,
+                        0,
+                        0);
+                const thirdBetAmount = 420
+                await fightClub.connect(accounts[3]).placeBet((fighterID), {
+                    value: thirdBetAmount
+                });
+
+                // Final round
+                await fightClub.connect(accounts[0]).setConfig(true, 10);
+                await fightClub.connect(accounts[0])
+                    .setBracketStatus(
+                        winningBracket,
+                        0,
+                        0,
+                        0);
+
+                // Pot includes all three bettor amounts.
+                const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
+                expect(totalBets).to.equal(firstBetAmount + secondBetAmount + thirdBetAmount);
+
+                const fighterTotalPot = await fightClub.connect(accounts[1]).getFighterTotalPot(fighterID);
+                const fighterTotalEquity = await fightClub.connect(accounts[1]).getEquityForBet(fighterTotalPot[2], fighterTotalPot[0]);
+
+                const totalRounds = 10
+                const firstBettorBet = await fightClub.connect(accounts[1]).getBet();
+                const firstBettorLastUpdatedRound = firstBettorBet[3];
+                const firstBettorEquity = firstBettorBet[2] * (Math.pow(2, (totalRounds - firstBettorLastUpdatedRound)));
+                await expect(firstBettorEquity).to.equal(firstBetAmount * (Math.pow(2, (totalRounds - firstBettorRound))));
+                const firstBettorPercentage = firstBettorEquity / fighterTotalEquity;
+
+                const secondBettorBet = await fightClub.connect(accounts[2]).getBet();
+                const secondBettorLastUpdatedRound = secondBettorBet[3];
+                const secondBettorEquity = secondBettorBet[2] * (Math.pow(2, (totalRounds - secondBettorLastUpdatedRound)));
+                await expect(secondBettorEquity).to.equal(secondBetAmount * (Math.pow(2, (totalRounds - secondBettorRound))));
+                const secondBettorPercentage = secondBettorEquity / fighterTotalEquity;
+
+                const thirdBettorBet = await fightClub.connect(accounts[3]).getBet();
+                const thirdBettorLastUpdatedRound = thirdBettorBet[3];
+                const thirdBettorEquity = thirdBettorBet[2] * (Math.pow(2, (totalRounds - thirdBettorLastUpdatedRound)));
+                await expect(thirdBettorEquity).to.equal(thirdBetAmount * (Math.pow(2, totalRounds - thirdBettorRound)));
+
+                const preRedemptionPot = await fightClub.connect(accounts[0]).getTotalPot();
+                console.log("Pre redemption pot is %s.", preRedemptionPot);
+                await fightClub.connect(accounts[1]).redeemPot();
+                await fightClub.connect(accounts[2]).redeemPot();
+                await fightClub.connect(accounts[3]).redeemPot();
+                const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
+                console.log("After all three redemptions, pot is %s.", postRedemptionBets);
+            } else {
+                return this.skip();
+            }
         });
 
-        // Third bettor.
-        const thirdBettorRound = 7
-        await fightClub.connect(accounts[0]).setConfig(true, thirdBettorRound);
-        await fightClub.connect(accounts[0])
-            .setBracketStatus(
-                winningBracket,
-                0,
-                0,
-                0);
-        const thirdBetAmount = 420
-        await fightClub.connect(accounts[3]).placeBet((fighterID), {
-            value: thirdBetAmount
+        it("testnet: fail bet if betting is closed", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(false, 0)
+                await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                })).to.be.revertedWith('Betting is not open; we are mid-round');
+            } else {
+                return this.skip();
+            }
+        });
+    
+        it("testnet: successfully place bet", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 0)
+                await fightClub.connect(accounts[1]).placeBet((fighterID),{
+                    value: ethers.utils.parseEther("1.0")
+                });
+
+                const amount = await fightClub.connect(accounts[1]).getBet();
+                await expect(amount[1]).to.equal(ethers.utils.parseEther("1.0"));
+            } else {
+                return this.skip();
+            }
         });
 
-        // Final round
-        await fightClub.connect(accounts[0]).setConfig(true, 10);
-        await fightClub.connect(accounts[0])
-            .setBracketStatus(
-                winningBracket,
-                0,
-                0,
-                0);
+        it("testnet: place two successful bets on same fighter, same round", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-        // Pot includes all three bettor amounts.
-        const totalBets = await fightClub.connect(accounts[0]).getTotalPot();
-        expect(totalBets).to.equal(firstBetAmount + secondBetAmount + thirdBetAmount);
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                });
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.5")
+                });
 
-        const fighterTotalPot = await fightClub.connect(accounts[1]).getFighterTotalPot(fighterID);
-        const fighterTotalEquity = await fightClub.connect(accounts[1]).getEquityForBet(fighterTotalPot[2], fighterTotalPot[0]);
-
-        const totalRounds = 10
-        const firstBettorBet = await fightClub.connect(accounts[1]).getBet();
-        const firstBettorLastUpdatedRound = firstBettorBet[3];
-        const firstBettorEquity = firstBettorBet[2] * (Math.pow(2, (totalRounds - firstBettorLastUpdatedRound)));
-        await expect(firstBettorEquity).to.equal(firstBetAmount * (Math.pow(2, (totalRounds - firstBettorRound))));
-        const firstBettorPercentage = firstBettorEquity / fighterTotalEquity;
-
-        const secondBettorBet = await fightClub.connect(accounts[2]).getBet();
-        const secondBettorLastUpdatedRound = secondBettorBet[3];
-        const secondBettorEquity = secondBettorBet[2] * (Math.pow(2, (totalRounds - secondBettorLastUpdatedRound)));
-        await expect(secondBettorEquity).to.equal(secondBetAmount * (Math.pow(2, (totalRounds - secondBettorRound))));
-        const secondBettorPercentage = secondBettorEquity / fighterTotalEquity;
-
-        const thirdBettorBet = await fightClub.connect(accounts[3]).getBet();
-        const thirdBettorLastUpdatedRound = thirdBettorBet[3];
-        const thirdBettorEquity = thirdBettorBet[2] * (Math.pow(2, (totalRounds - thirdBettorLastUpdatedRound)));
-        await expect(thirdBettorEquity).to.equal(thirdBetAmount * (Math.pow(2, totalRounds - thirdBettorRound)));
-
-        const preRedemptionPot = await fightClub.connect(accounts[0]).getTotalPot();
-        console.log("Pre redemption pot is %s.", preRedemptionPot);
-        await fightClub.connect(accounts[1]).redeemPot();
-        await fightClub.connect(accounts[2]).redeemPot();
-        await fightClub.connect(accounts[3]).redeemPot();
-        const postRedemptionBets = await fightClub.connect(accounts[0]).getTotalPot();
-        console.log("After all three redemptions, pot is %s.", postRedemptionBets);
-    });
-
-    it("fail bet if betting is closed", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(false, 0)
-        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
-        })).to.be.revertedWith('Betting is not open; we are mid-round');
-    });
- 
-    it("successfully place bet", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 0)
-        await fightClub.connect(accounts[1]).placeBet((fighterID),{
-            value: ethers.utils.parseEther("1.0")
+                const afterTwoBets = await fightClub.connect(accounts[1]).getBet();
+                await expect(afterTwoBets[1]).to.equal(ethers.utils.parseEther("2.5"));
+            } else {
+                return this.skip();
+            }
         });
 
-        const amount = await fightClub.connect(accounts[1]).getBet();
-        await expect(amount[1]).to.equal(ethers.utils.parseEther("1.0"));
-    });
+        it("testnet: place two successful bets on same fighter, different rounds", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-    it("place two successful bets on same fighter, same round", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 0);
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                });
+                const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+                const firstRoundBetAmount = firstRoundBet[1];
+                await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+                const firstRoundBetEquity = firstRoundBet[2];
+                await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
 
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
+                await fightClub.connect(accounts[0]).setConfig(true, 1);
+                await fightClub.connect(accounts[0])
+                .setBracketStatus(
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche());
+
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.5")
+                });
+                const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
+                const secondRoundBetAmount = secondRoundBet[1];
+                await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
+
+                const secondRoundBetEquity = secondRoundBet[2];
+                await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("3.5"));
+            } else {
+                return this.skip();
+            }
         });
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.5")
+
+        it("testnet: place two successful bets on same fighter, same round", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 0);
+
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                });
+                const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+                const firstRoundBetAmount = firstRoundBet[1];
+                await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+                const firstRoundBetEquity = firstRoundBet[2];
+                await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
+
+                await fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.5")
+                });
+                const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
+                const secondRoundBetAmount = secondRoundBet[1];
+                await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
+                const secondRoundBetEquity = secondRoundBet[2];
+                await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("2.5"));
+            } else {
+                return this.skip();
+            }
         });
 
-        const afterTwoBets = await fightClub.connect(accounts[1]).getBet();
-        await expect(afterTwoBets[1]).to.equal(ethers.utils.parseEther("2.5"));
-    });
+        it("testnet: fail bets on different fighters, same round", async function() {
+            if (!isGoerli) {
+                const fighterOneID = 24;
+                const fighterTwoID = 16;
+                await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-    it("place two successful bets on same fighter, different rounds", async function() {
-        
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 0);
-
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
+                await fightClub.connect(accounts[1]).placeBet(fighterOneID, {
+                    value: ethers.utils.parseEther("1.0")
+                });
+                const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
+                const firstRoundBetAmount = firstRoundBet[1];
+                await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
+                const firstRoundBetEquity = firstRoundBet[2];
+                await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
+                await expect(fightClub.connect(accounts[1]).placeBet(fighterTwoID, {
+                    value: ethers.utils.parseEther("1.0")
+                })).to.be.revertedWith('Cannot change fighters');
+            } else {
+                return this.skip();
+            }
         });
-        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
-        const firstRoundBetAmount = firstRoundBet[1];
-        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
-        const firstRoundBetEquity = firstRoundBet[2];
-        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
 
-        await fightClub.connect(accounts[0]).setConfig(true, 1);
-        await fightClub.connect(accounts[0])
-        .setBracketStatus(
-            allFightersAliveTranche(),
-            allFightersAliveTranche(),
-            allFightersAliveTranche(),
-            allFightersAliveTranche());
+        it("testnet: fail bet our fighter is dead", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 1)
+                const onlyOurFighterDead = parseInt("11111111011111111111111111111111", 2);
 
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.5")
+                await fightClub.connect(accounts[0])
+                .setBracketStatus(
+                    onlyOurFighterDead, 
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche());
+                await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                })).to.be.revertedWith('Fighter is eliminated');
+            } else {
+                return this.skip();
+            }
         });
-        const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
-        const secondRoundBetAmount = secondRoundBet[1];
-        await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
 
-        const secondRoundBetEquity = secondRoundBet[2];
-        await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("3.5"));
-    });
+        it("testnet: bet succeeds even if other fighters are dead", async function() {
+            if (!isGoerli) {
+                const fighterID = 232
+                await fightClub.connect(accounts[0]).setConfig(true, 1)
+                const onlyOurFighterDead = parseInt("11111111111111011111111111111111", 2);
 
-    it("place two successful bets on same fighter, same round", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 0);
-
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
+                await fightClub.connect(accounts[0])
+                .setBracketStatus(
+                    onlyOurFighterDead, 
+                    allFightersAliveTranche(), 
+                    allFightersAliveTranche(), 
+                    allFightersAliveTranche());
+                await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                }));
+            } else {
+                return this.skip();
+            }
         });
-        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
-        const firstRoundBetAmount = firstRoundBet[1];
-        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
-        const firstRoundBetEquity = firstRoundBet[2];
-        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
 
-        await fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.5")
+        it("testnet: emergency withdrawal succeeds in case of contract failure", async function() {
+            if (!isGoerli) {
+                const fighterID = 24
+                await fightClub.connect(accounts[0]).setConfig(false, 1)
+                await fightClub.connect(accounts[0])
+                .setBracketStatus(
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche(),
+                    allFightersAliveTranche());
+                await fightClub.connect(accounts[0]).setConfig(true, 1);
+                await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
+                    value: ethers.utils.parseEther("1.0")
+                }));
+                await fightClub.connect(accounts[0]).setConfig(false, 2);
+                await expect(fightClub.connect(accounts[1]).emergencyWithdrawal()).to.be.revertedWith(
+                    "Must be in error state"
+                );
+                await fightClub.connect(accounts[0]).setConfigError(true);
+                await expect(await fightClub.connect(accounts[1]).emergencyWithdrawal()).to.changeEtherBalance(accounts[1], '1000000000000000000');
+            } else {
+                return this.skip();
+            }
         });
-        const secondRoundBet = await fightClub.connect(accounts[1]).getBet();
-        const secondRoundBetAmount = secondRoundBet[1];
-        await expect(secondRoundBetAmount).to.equal(ethers.utils.parseEther("2.5"));
-        const secondRoundBetEquity = secondRoundBet[2];
-        await expect(secondRoundBetEquity).to.equal(ethers.utils.parseEther("2.5"));
-    });
 
-    it("fail bets on different fighters, same round", async function() {
-        const fighterOneID = 24;
-        const fighterTwoID = 16;
-        await fightClub.connect(accounts[0]).setConfig(true, 0);
 
-        await fightClub.connect(accounts[1]).placeBet(fighterOneID, {
-            value: ethers.utils.parseEther("1.0")
+        it("goerli: successfully update contract randomness", async function() {
+            
+            if (isGoerli) {
+
+                let currentBlock = await goerliMineUntil(true);
+                const originalUserRandomness = (await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString();
+                const originalRandomness = (await fightClub.connect(accounts[1]).getRandomness()).toString();
+                await fightClub.connect(accounts[1]).addRandomness(2423432, { gasPrice: 2000000000, gasLimit: 85000 });
+                await goerliMineUntilBlock(currentBlock.number + 5);
+                const updatedUserRandomness = (await fightClub.connect(accounts[1]).getUserRandomness(accounts[1].address)).toString();
+                const updatedRandomness = (await fightClub.connect(accounts[1]).getRandomness()).toString();
+                await expect(originalUserRandomness).to.not.equal(updatedUserRandomness);
+                await expect(originalRandomness).to.not.equal(updatedRandomness);
+    
+            } else {
+                return this.skip();
+            }
         });
-        const firstRoundBet = await fightClub.connect(accounts[1]).getBet();
-        const firstRoundBetAmount = firstRoundBet[1];
-        await expect(firstRoundBetAmount).to.equal(ethers.utils.parseEther("1.0"));
-        const firstRoundBetEquity = firstRoundBet[2];
-        await expect(firstRoundBetEquity).to.equal(ethers.utils.parseEther("1.0"));
-        await expect(fightClub.connect(accounts[1]).placeBet(fighterTwoID, {
-            value: ethers.utils.parseEther("1.0")
-        })).to.be.revertedWith('Cannot change fighters');
-    });
-
-    it("fail bet our fighter is dead", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 1)
-        const onlyOurFighterDead = parseInt("11111111011111111111111111111111", 2);
-
-        await fightClub.connect(accounts[0])
-        .setBracketStatus(
-            onlyOurFighterDead, 
-            allFightersAliveTranche(),
-            allFightersAliveTranche(),
-            allFightersAliveTranche());
-        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
-        })).to.be.revertedWith('Fighter is eliminated');
-    });
-
-    it("bet succeeds even if other fighters are dead", async function() {
-        const fighterID = 232
-        await fightClub.connect(accounts[0]).setConfig(true, 1)
-        const onlyOurFighterDead = parseInt("11111111111111011111111111111111", 2);
-
-        await fightClub.connect(accounts[0])
-        .setBracketStatus(
-            onlyOurFighterDead, 
-            allFightersAliveTranche(), 
-            allFightersAliveTranche(), 
-            allFightersAliveTranche());
-        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
-        }));
-    });
-
-    it("emergency withdrawal succeeds in case of contract failure", async function() {
-        const fighterID = 24
-        await fightClub.connect(accounts[0]).setConfig(false, 1)
-        await fightClub.connect(accounts[0])
-        .setBracketStatus(
-            allFightersAliveTranche(),
-            allFightersAliveTranche(),
-            allFightersAliveTranche(),
-            allFightersAliveTranche());
-        await fightClub.connect(accounts[0]).setConfig(true, 1);
-        await expect(fightClub.connect(accounts[1]).placeBet(fighterID, {
-            value: ethers.utils.parseEther("1.0")
-        }));
-        await fightClub.connect(accounts[0]).setConfig(false, 2);
-        await expect(fightClub.connect(accounts[1]).emergencyWithdrawal()).to.be.revertedWith(
-            "Must be in error state"
-        );
-        await fightClub.connect(accounts[0]).setConfigError(true);
-        await expect(await fightClub.connect(accounts[1]).emergencyWithdrawal()).to.changeEtherBalance(accounts[1], '1000000000000000000');
     });
 });
 
@@ -409,6 +489,23 @@ const mineUntil = async function (blockNum) {
         await ethers.provider.send('evm_mine');
         currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
     }
+}
+
+const goerliMineUntil = async function (isEven) {
+    let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+    while (Math.floor((currentBlock.number / 10) % 2) != (isEven ? 0 : 1)) {
+        await sleep(10000);
+    }
+    return currentBlock;
+}
+
+const goerliMineUntilBlock = async function (blockNum) {
+    let currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+    while (currentBlock.number != blockNum) {
+        currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+        await sleep(10000);
+    }
+    return currentBlock;
 }
 
 const allFightersAliveTranche = function () {
