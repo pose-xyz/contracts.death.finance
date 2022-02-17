@@ -2,14 +2,6 @@
 pragma solidity ^0.8.0;
 
 contract VerifySignature {
-    
-    function getMessageHash(
-        address _to,
-        uint32 _id,
-        bool _isBase
-    ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_to, _id, _isBase));
-    }
 
     function recover(
         bytes32 messageHash, 
@@ -20,14 +12,25 @@ contract VerifySignature {
         return ecrecover(messageHash, v, r, s);
     }
     
-    function verifyC(
+    function verifyRelease(
+        address _signer,
+        address _owner,
+        bytes32 _provenance,
+        bytes memory signature
+    ) public pure returns (bool) {
+        bytes32 payloadHash = keccak256(abi.encodePacked(_owner, _provenance));
+        bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payloadHash));
+        return recoverSigner(messageHash, signature) == _signer;
+    }
+    
+    function verifyMinter(
         address _signer,
         address _to,
         uint32 _id,
         bool _isBase,
         bytes memory signature
     ) public pure returns (bool) {
-        bytes32 payloadHash = getMessageHash(_to, _id, _isBase);
+        bytes32 payloadHash = keccak256(abi.encodePacked(_to, _id, _isBase));
         bytes32 messageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", payloadHash));
         return recoverSigner(messageHash, signature) == _signer;
     }
