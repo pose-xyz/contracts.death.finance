@@ -8,7 +8,6 @@ pragma solidity >= 0.8.0;
 contract FightClub {
 
     address internal controller;
-    uint constant BOUTS = 10;
     uint internal elementsMatrix;
     uint internal random;
     mapping(uint => BracketStatus) internal roundBracketStatus;
@@ -26,6 +25,7 @@ contract FightClub {
         bool fighterRedeemed;
         bool bettingIsOpen;
         uint8 currentRound;
+        uint8 rounds;
         uint24 winningFighterIdentifier;
         address signerAddress;
         address verifySignatureAddress;
@@ -75,21 +75,27 @@ contract FightClub {
 
     event Winner(uint24 _winner);
 
-    constructor (uint _elementsMatrix, address _signerAddress, address _verifySignatureAddress, bytes32 _provenanceHash) {
+    constructor (uint _elementsMatrix, address _signerAddress, address _verifySignatureAddress, uint8 _rounds, bytes32 _provenanceHash) {
         controller = msg.sender;
         elementsMatrix = _elementsMatrix;
         random = (uint256(keccak256(abi.encodePacked(block.number, block.timestamp))) >> 128);
         config.winningFighterIdentifier = 16777215;
         config.signerAddress = _signerAddress;
         config.verifySignatureAddress = _verifySignatureAddress;
+        config.rounds = _rounds;
         config.provenanceHash = _provenanceHash;
     }
 
     function setConfig(bool _bettingIsOpen, uint8 _currentRound) external {
         require(msg.sender == controller, 'Must be called by controller');
         require(_currentRound >= config.currentRound, 'Requires greater current round');
+        require(config.currentRound < config.rounds, 'Tournament is over!');
         config.bettingIsOpen = _bettingIsOpen;
         config.currentRound = _currentRound;
+    }
+
+    function getConfig() view external returns (bool, bool, bool, uint8, uint24, address, address, uint, uint, uint, bytes32) {
+        return (config.isError, config.fighterRedeemed, config.bettingIsOpen, config.currentRound, config.winningFighterIdentifier, config.signerAddress, config.verifySignatureAddress, config.pot, config.potHighWaterMark, config.winningFighterOwnerPayout, config.provenanceHash);
     }
 
     function setConfigError(bool _isError) external {
@@ -133,7 +139,7 @@ contract FightClub {
     }
 
     function evaluateWinner() external {
-        require(config.currentRound == BOUTS, 'Must be last round');
+        require(config.currentRound == config.rounds, 'Must be last round');
         BracketStatus storage bracketStatus = roundBracketStatus[config.currentRound - 1];
 
         uint tranche;
@@ -301,7 +307,7 @@ contract FightClub {
         uint128 eventLog = 1;
         uint256 randomNumber = uint256(keccak256(abi.encodePacked(_blockNumber, _random)));
 
-        for (uint b=0;b<BOUTS;b++) {
+        for (uint b=0;b<10;b++) {
             eventLog = (eventLog << 1) + (fighterOne.isTurn ? 0 : 1);
             if (fighterOne.isTurn) {
                 (fighterOne, fighterTwo, eventLog, shouldSkip, randomNumber) = attack(fighterOne, fighterTwo, eventLog, randomNumber, _random);
@@ -379,14 +385,14 @@ contract FightClub {
 
     function redeemFighterBounty(bytes memory _signature) external {
         require(!config.fighterRedeemed, 'Bounty has already been redeemed');
-        require(config.currentRound == BOUTS, 'Must be last round');
+        require(config.currentRound == config.rounds, 'Must be last round');
         require(VerifySignature(config.verifySignatureAddress).verifyF(config.signerAddress, msg.sender, config.winningFighterIdentifier, _signature), "Purchaser not on whitelist");
         config.fighterRedeemed = true;
         payable(msg.sender).transfer(config.pot / 20);
     }
 
     function redeemPot() external {
-        require(config.currentRound == BOUTS, 'Must be last round');
+        require(config.currentRound == config.rounds, 'Must be last round');
         FighterBet storage fighterBet = bets[msg.sender];
         require(isFighterAlive(fighterBet.fighterIdentifier), 'Fighter is eliminated');
         require(!fighterBet.isRedeemed, 'Bet previously redeemed');
