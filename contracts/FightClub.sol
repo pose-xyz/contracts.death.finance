@@ -251,7 +251,7 @@ contract FightClub {
     function addRandomness(uint128 _random) public {
         require((block.number / 10) % 2 == 0 || config.stakingIsOpen, 'Blocknum has odd tens digit or staking is not open.');
         require(_random > 1, 'Multiplier less than 2');
-        random = (random * ((uint256(keccak256(abi.encodePacked(block.number, _random))) >> 128))) >> 128;
+        random = uint256(keccak256(abi.encodePacked(block.number, _random, random))) >> 128;
         userTotalChaos[msg.sender] += 1;
     }
 
